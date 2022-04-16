@@ -503,6 +503,7 @@ begin
       check_equal(now, timestamp, result(" setting up transaction stalled"));
 
       wait until rising_edge(aclk);
+      wait for 1 ps;
       mocklogger := get_logger("check");
       mock(mocklogger);
 
