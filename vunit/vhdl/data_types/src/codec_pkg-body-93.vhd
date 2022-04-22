@@ -26,7 +26,7 @@ package body codec_v1993_pkg is
   -----------------------------------------------------------------------------
 
   -- Boolean
-  function encode_boolean(data : boolean) return code_vec_t is
+  function encode_boolean(data : boolean) return code_t is
   begin
     if data then
       return "T";
@@ -36,7 +36,7 @@ package body codec_v1993_pkg is
   end function;
 
   procedure decode_boolean(
-    constant code   : in    code_vec_t;
+    constant code   : in    code_t;
     variable index  : inout code_index_t;
     variable result : out   boolean
   ) is
@@ -46,14 +46,14 @@ package body codec_v1993_pkg is
   end procedure;
 
   -- Character
-  function encode_character(data : character) return code_vec_t is
+  function encode_character(data : character) return code_t is
   begin
     -- String start at index 1 (they are defined with a positive range)
     return (1 => data);
   end function;
 
   procedure decode_character(
-    constant code   : in    code_vec_t;
+    constant code   : in    code_t;
     variable index  : inout code_index_t;
     variable result : out   character
   ) is
@@ -63,7 +63,7 @@ package body codec_v1993_pkg is
   end procedure;
 
   -- Bit
-  function encode_bit(data : bit) return code_vec_t is
+  function encode_bit(data : bit) return code_t is
   begin
     if data = '1' then
       return "1";
@@ -73,7 +73,7 @@ package body codec_v1993_pkg is
   end function;
 
   procedure decode_bit(
-    constant code   : in    code_vec_t;
+    constant code   : in    code_t;
     variable index  : inout code_index_t;
     variable result : out   bit
   ) is
@@ -87,14 +87,14 @@ package body codec_v1993_pkg is
   end procedure;
 
   -- std_ulogic
-  function encode_std_ulogic(data : std_ulogic) return code_vec_t is
+  function encode_std_ulogic(data : std_ulogic) return code_t is
   begin
     -- The '2 to 2' is used to select the second character of the string representation
     return std_ulogic'image(data)(2 to 2);
   end function;
 
   procedure decode_std_ulogic(
-    constant code   : in    code_vec_t;
+    constant code   : in    code_t;
     variable index  : inout code_index_t;
     variable result : out   std_ulogic
   ) is
@@ -104,14 +104,14 @@ package body codec_v1993_pkg is
   end procedure;
 
   -- severity_level
-  function encode_severity_level(data : severity_level) return code_vec_t is
+  function encode_severity_level(data : severity_level) return code_t is
   begin
     -- String start at index 1 (they are defined with a positive range)
     return (1 => character'val(severity_level'pos(data)));
   end function;
 
   procedure decode_severity_level(
-    constant code   : in    code_vec_t;
+    constant code   : in    code_t;
     variable index  : inout code_index_t;
     variable result : out   severity_level
   ) is
@@ -121,14 +121,14 @@ package body codec_v1993_pkg is
   end procedure;
 
   -- file_open_kind
-  function encode_file_open_kind(data : file_open_kind) return code_vec_t is
+  function encode_file_open_kind(data : file_open_kind) return code_t is
   begin
     -- String start at index 1 (they are defined with a positive range)
     return (1 => character'val(file_open_kind'pos(data)));
   end function;
 
   procedure decode_file_open_kind(
-    constant code   : in    code_vec_t;
+    constant code   : in    code_t;
     variable index  : inout code_index_t;
     variable result : out   file_open_kind
   ) is
@@ -138,14 +138,14 @@ package body codec_v1993_pkg is
   end procedure;
 
   -- file_open_status
-  function encode_file_open_status(data : file_open_status) return code_vec_t is
+  function encode_file_open_status(data : file_open_status) return code_t is
   begin
     -- String start at index 1 (they are defined with a positive range)
     return (1 => character'val(file_open_status'pos(data)));
   end function;
 
   procedure decode_file_open_status(
-    constant code   : in    code_vec_t;
+    constant code   : in    code_t;
     variable index  : inout code_index_t;
     variable result : out   file_open_status
   ) is
@@ -160,13 +160,13 @@ package body codec_v1993_pkg is
   -----------------------------------------------------------------------------
 
   -- integer
-  function encode_integer(data : integer) return code_vec_t is
+  function encode_integer(data : integer) return code_t is
   begin
     return encode_raw_bit_array(bit_array(ieee.numeric_bit.to_signed(data, SIMULATOR_INTEGER_WIDTH)));
   end function;
 
   procedure decode_integer(
-    constant code   : in    code_vec_t;
+    constant code   : in    code_t;
     variable index  : inout code_index_t;
     variable result : out   integer
   ) is
@@ -178,7 +178,7 @@ package body codec_v1993_pkg is
   end procedure;
 
   -- real
-  function encode_real(data : real) return code_vec_t is
+  function encode_real(data : real) return code_t is
     constant is_signed : boolean := data < 0.0;
     variable value : real := abs(data);
     variable exp : integer;
@@ -197,7 +197,7 @@ package body codec_v1993_pkg is
   end function;
 
   procedure decode_real(
-    constant code   : in    code_vec_t;
+    constant code   : in    code_t;
     variable index  : inout code_index_t;
     variable result : out   real
   ) is
@@ -218,31 +218,32 @@ package body codec_v1993_pkg is
   end procedure;
 
   -- time
-  function encode_time(data : time) return code_vec_t is
-    function modulo(t : time; m : natural) return integer is -- TODO
+  function encode_time(data : time) return code_t is
+
+    function modulo(t : time; m : natural) return integer is
     begin
       return integer((t - (t/m)*m)/SIMULATOR_RESOLUTION) mod m;
     end function;
-
-    variable ret_val : code_vec_t(1 to CODE_LENGTH_TIME);
+    variable ret_val : code_t(1 to CODE_LENGTH_TIME) := (others => NUL);
     variable t       : time;
     variable ascii   : natural;
+
   begin
     t := data;
     for i in CODE_LENGTH_TIME downto 1 loop
-      ascii := modulo(t, 256); -- TODO
+      ascii := modulo(t, CODE_NB_VALUES);
       ret_val(i) := character'val(ascii);
-      t          := (t - (ascii * SIMULATOR_RESOLUTION))/256;
+      t := (t - (ascii * SIMULATOR_RESOLUTION))/CODE_NB_VALUES;
     end loop;
     return ret_val;
   end function;
 
   procedure decode_time(
-    constant code   : in    code_vec_t;
+    constant code   : in    code_t;
     variable index  : inout code_index_t;
     variable result : out   time
   ) is
-    constant code_int : code_vec_t(1 to CODE_LENGTH_TIME) := code(index to index + CODE_LENGTH_TIME - 1);
+    constant code_int : code_t(1 to CODE_LENGTH_TIME) := code(index to index + CODE_LENGTH_TIME - 1);
     variable r : time;
     variable b : integer;
   begin
@@ -250,9 +251,9 @@ package body codec_v1993_pkg is
 
     for i in code_int'range loop
       b := character'pos(code_int(i));
-      r := r * 256; -- TODO
-      if i = 1 and b >= 128 then
-        b := b - 256;
+      r := r * CODE_NB_VALUES;
+      if i = 1 and b >= CODE_NB_VALUES/2 then
+        b := b - CODE_NB_VALUES;
       end if;
       r := r + b * SIMULATOR_RESOLUTION;
     end loop;
@@ -267,13 +268,13 @@ package body codec_v1993_pkg is
   -----------------------------------------------------------------------------
 
   -- complex
-  function encode_complex(data : complex) return code_vec_t is
+  function encode_complex(data : complex) return code_t is
   begin
     return encode_real(data.re) & encode_real(data.im);
   end function;
 
   procedure decode_complex(
-    constant code   : in    code_vec_t;
+    constant code   : in    code_t;
     variable index  : inout code_index_t;
     variable result : out   complex
   ) is
@@ -283,13 +284,13 @@ package body codec_v1993_pkg is
   end procedure;
 
   -- complex_polar
-  function encode_complex_polar(data : complex_polar) return code_vec_t is
+  function encode_complex_polar(data : complex_polar) return code_t is
   begin
     return encode_real(data.mag) & encode_real(data.arg);
   end function;
 
   procedure decode_complex_polar(
-    constant code   : in    code_vec_t;
+    constant code   : in    code_t;
     variable index  : inout code_index_t;
     variable result : out   complex_polar
   ) is
@@ -308,12 +309,12 @@ package body codec_v1993_pkg is
     constant range_left   : integer;
     constant range_right  : integer;
     constant is_ascending : boolean
-  ) return code_vec_t is
+  ) return code_t is
   begin
     return encode_integer(range_left) & encode_integer(range_right) & encode_boolean(is_ascending);
   end function;
 
-  function decode_range(constant code : code_vec_t) return range_t is
+  function decode_range(constant code : code_t) return range_t is
     constant RANGE_LEFT : integer := decode_integer(
       code(code'left to code'left + CODE_LENGTH_INTEGER - 1)
     );
@@ -334,7 +335,7 @@ package body codec_v1993_pkg is
   end function;
 
   -- Null range constant
-  constant ENCODED_NULL_RANGE : code_vec_t := encode_range(1, 0, true);
+  constant ENCODED_NULL_RANGE : code_t := encode_range(1, 0, true);
 
 
   -----------------------------------------------------------------------------
@@ -383,13 +384,14 @@ package body codec_v1993_pkg is
     return code_length_bit_array(length);
   end function;
 
+  constant BITS_LENGTH_STD_ULOGIC : positive := positive(ceil(log2(real(LENGTH_STD_ULOGIC))));
   function code_length_std_ulogic_array(length : natural) return natural is
   begin
     -- std_ulogic_array are encoded into string. The array is divided into
     -- groups of 2 std_ulogic_array.
-    -- One std_ulogic can represent LENGTH_STD_ULOGIC=9 value: it needs 4 bits to store it.
-    -- In a character (8 bits), we can store 2 std_ulogic elements.
-    return CODE_LENGTH_RANGE_TYPE + ceil_div(length, 2); -- TODO hard coded value
+    -- One std_ulogic can represent LENGTH_STD_ULOGIC=9 value: it needs BITS_LENGTH_STD_ULOGIC=3 bits to store it.
+    -- In a character (CODE_LENGTH=8 bits), we can store BITS_LENGTH_STD_ULOGIC/CODE_LENGTH=2 std_ulogic elements.
+    return CODE_LENGTH_RANGE_TYPE + ceil_div(length, BITS_LENGTH_STD_ULOGIC/CODE_LENGTH);
   end function;
 
   function code_length_std_ulogic_vector(length : natural) return natural is
@@ -413,7 +415,7 @@ package body codec_v1993_pkg is
   -----------------------------------------------------------------------------
 
   -- string
-  function encode_string(data : string) return code_vec_t is
+  function encode_string(data : string) return code_t is
   begin
     -- Modelsim sets data'right to 0 which is out of the positive index
     -- range used by strings.
@@ -426,7 +428,7 @@ package body codec_v1993_pkg is
   end function;
 
   procedure decode_string(
-    constant code   : in    code_vec_t;
+    constant code   : in    code_t;
     variable index  : inout code_index_t;
     variable result : out   string
   ) is
@@ -437,8 +439,8 @@ package body codec_v1993_pkg is
   end procedure;
 
   -- raw_bit_array
-  function encode_raw_bit_array(data : bit_array) return code_vec_t is
-    variable ret_val : code_vec_t(1 to code_length_raw_bit_array(data'length));
+  function encode_raw_bit_array(data : bit_array) return code_t is
+    variable ret_val : code_t(1 to code_length_raw_bit_array(data'length)) := (others => NUL);
     variable value : ieee.numeric_bit.unsigned(data'length-1 downto 0) := ieee.numeric_bit.unsigned(data);
   begin
     for i in ret_val'reverse_range loop
@@ -449,12 +451,12 @@ package body codec_v1993_pkg is
   end function;
 
   procedure decode_raw_bit_array(
-    constant code   :     code_vec_t;
+    constant code   :     code_t;
     variable index  : inout code_index_t;
     variable result : out bit_array
   ) is
     variable ret_val : bit_array(code'length*CODE_LENGTH-1 downto 0);
-    variable code_alias : code_vec_t(index to code'high) := code;
+    variable code_alias : code_t(index to code'high) := code;
   begin
     for i in code'range loop
       ret_val(
@@ -466,7 +468,7 @@ package body codec_v1993_pkg is
   end procedure;
 
   -- bit_array
-  function encode_bit_array(data : bit_array) return code_vec_t is
+  function encode_bit_array(data : bit_array) return code_t is
   begin
     if data'length = 0 then
       return ENCODED_NULL_RANGE;
@@ -476,7 +478,7 @@ package body codec_v1993_pkg is
   end function;
 
   procedure decode_bit_array(
-    constant code   : in    code_vec_t;
+    constant code   : in    code_t;
     variable index  : inout code_index_t;
     variable result : out   bit_array
   ) is
@@ -486,7 +488,7 @@ package body codec_v1993_pkg is
   end procedure;
 
   -- bit_vector
-  function encode_bit_vector(data : bit_vector) return code_vec_t is
+  function encode_bit_vector(data : bit_vector) return code_t is
   begin
     if data'length = 0 then
       return ENCODED_NULL_RANGE;
@@ -496,7 +498,7 @@ package body codec_v1993_pkg is
   end function;
 
   procedure decode_bit_vector(
-    constant code   : in    code_vec_t;
+    constant code   : in    code_t;
     variable index  : inout code_index_t;
     variable result : out   bit_vector
   ) is
@@ -507,13 +509,13 @@ package body codec_v1993_pkg is
   end procedure;
 
   -- ieee.numeric_bit.unsigned
-  function encode_numeric_bit_unsigned(data : ieee.numeric_bit.unsigned) return code_vec_t is
+  function encode_numeric_bit_unsigned(data : ieee.numeric_bit.unsigned) return code_t is
   begin
     return encode_bit_array(bit_array(data));
   end function;
 
   procedure decode_numeric_bit_unsigned(
-    constant code   : in    code_vec_t;
+    constant code   : in    code_t;
     variable index  : inout code_index_t;
     variable result : out   ieee.numeric_bit.unsigned
   ) is
@@ -524,13 +526,13 @@ package body codec_v1993_pkg is
   end procedure;
 
   -- ieee.numeric_bit.signed
-  function encode_numeric_bit_signed(data : ieee.numeric_bit.signed) return code_vec_t is
+  function encode_numeric_bit_signed(data : ieee.numeric_bit.signed) return code_t is
   begin
     return encode_bit_array(bit_array(data));
   end function;
 
   procedure decode_numeric_bit_signed(
-    constant code   : in    code_vec_t;
+    constant code   : in    code_t;
     variable index  : inout code_index_t;
     variable result : out   ieee.numeric_bit.signed
   ) is
@@ -541,84 +543,79 @@ package body codec_v1993_pkg is
   end procedure;
 
   -- std_ulogic_array
-  function encode_std_ulogic_array(data : std_ulogic_array) return code_vec_t is
-    variable ret_val : code_vec_t(1 to code_length_std_ulogic_array(data'length));
-    variable index   : positive := 1 + CODE_LENGTH_RANGE_TYPE;
+  -- Function which transform a boolean into +1 or -1
+  function idx_increment(is_ascending : boolean) return integer is
+  begin
+      if is_ascending then
+        return 1;
+      else
+        return -1;
+      end if;
+  end function;
+
+  function encode_std_ulogic_array(data : std_ulogic_array) return code_t is
+    variable ret_val : code_t(1 to code_length_std_ulogic_array(data'length)) := (others => NUL);
     variable i       : integer  := data'left;
     variable byte    : natural;
+    constant IDX_INCREMENT : integer := idx_increment(data'ascending);
   begin
     if data'length = 0 then
       return ENCODED_NULL_RANGE;
     end if;
+    -- Encode the range
     ret_val(1 to CODE_LENGTH_RANGE_TYPE) := encode_range(data'left, data'right, data'ascending);
-    if data'ascending then
-      while i <= data'right loop
-        byte := std_ulogic'pos(data(i));
-        if i /= data'right then
-          byte := byte + std_ulogic'pos(data(i + 1)) * 16; -- TODO refactoriser ?
-        end if;
-        ret_val(index) := character'val(byte);
-        i              := i + 2;
-        index          := index + 1;
-      end loop;
-    else
-      while i >= data'right loop
-        byte := std_ulogic'pos(data(i));
-        if i /= data'right then
-          byte := byte + std_ulogic'pos(data(i - 1)) * 16;
-        end if;
-        ret_val(index) := character'val(byte);
-        i              := i - 2;
-        index          := index + 1;
-      end loop;
-    end if;
+    -- One std_ulogic can represent LENGTH_STD_ULOGIC=9 value: it needs BITS_LENGTH_STD_ULOGIC=3 bits to store it.
+    -- In a character (CODE_LENGTH=8 bits), we can store BITS_LENGTH_STD_ULOGIC/CODE_LENGTH=2 std_ulogic elements.
+    for idx in CODE_LENGTH_RANGE_TYPE+1 to ret_val'high loop
+      -- Encode the first std_ulogic
+      byte := std_ulogic'pos(data(i));
+      -- Encode the second std_ulogic (if not at the end of the std_ulogic_array)
+      if i /= ret_val'right then
+        i := i + IDX_INCREMENT;
+        byte := byte + std_ulogic'pos(data(i)) * 2**BITS_LENGTH_STD_ULOGIC;
+      end if;
+      -- Convert into a charater and stores it into the string
+      ret_val(idx) := character'val(byte);
+      i := i + IDX_INCREMENT;
+    end loop;
     return ret_val;
   end function;
 
   procedure decode_std_ulogic_array(
-    constant code   : in    code_vec_t;
+    constant code   : in    code_t;
     variable index  : inout code_index_t;
     variable result : out   std_ulogic_array
   ) is
     variable i : integer := result'left;
     variable upper_nibble : natural;
+    constant CODE_LENGTH : positive := code_length_std_ulogic_array(result'length);
+    constant IDX_INCREMENT : integer := idx_increment(result'ascending);
   begin
-    index := index + 9;
-    if result'ascending then
-      while i <= result'right loop
+    index := index + CODE_LENGTH_RANGE_TYPE;
+
+    for idx in index to index + CODE_LENGTH loop
+      -- Decode the second std_ulogic
         if i /= result'right then
-          upper_nibble  := character'pos(code(index))/16; -- TODO
-          result(i + 1) := std_ulogic'val(upper_nibble);
+          upper_nibble := character'pos(code(idx))/(2**BITS_LENGTH_STD_ULOGIC);
+          result(i + IDX_INCREMENT) := std_ulogic'val(upper_nibble);
         else
           upper_nibble := 0;
         end if;
-        result(i) := std_ulogic'val(character'pos(code(index)) - upper_nibble*16);
-        i         := i + 2;
-        index     := index + 1;
-      end loop;
-    else
-      while i >= result'right loop
-        if i /= result'right then
-          upper_nibble  := character'pos(code(index))/16;
-          result(i - 1) := std_ulogic'val(upper_nibble);
-        else
-          upper_nibble := 0;
-        end if;
-        result(i) := std_ulogic'val(character'pos(code(index)) - upper_nibble*16);
-        i         := i - 2;
-        index     := index + 1;
-      end loop;
-    end if;
+      -- Decode the first std_ulogic
+      result(i) := std_ulogic'val(character'pos(code(idx)) - upper_nibble*2**BITS_LENGTH_STD_ULOGIC);
+      i := i + 2*IDX_INCREMENT;
+    end loop;
+    index := index + CODE_LENGTH;
   end procedure;
 
   -- std_ulogic_vector
-  function encode_std_ulogic_vector(data : std_ulogic_vector) return code_vec_t is
+  function encode_std_ulogic_vector(data : std_ulogic_vector) return code_t is
   begin
     return encode_std_ulogic_array(std_ulogic_array(data));
   end function;
 
   procedure decode_std_ulogic_vector(
-    constant code   : in    code_vec_t;
+    constant code   : in    code_t;
     variable index  : inout code_index_t;
     variable result : out   std_ulogic_vector
   ) is
@@ -629,13 +626,13 @@ package body codec_v1993_pkg is
   end procedure;
 
   -- ieee.numeric_std.unresolved_unsigned
-  function encode_numeric_std_unsigned(data : ieee.numeric_std.unresolved_unsigned) return code_vec_t is
+  function encode_numeric_std_unsigned(data : ieee.numeric_std.unresolved_unsigned) return code_t is
   begin
     return encode_std_ulogic_array(std_ulogic_array(data));
   end function;
 
   procedure decode_numeric_std_unsigned(
-    constant code   : in    code_vec_t;
+    constant code   : in    code_t;
     variable index  : inout code_index_t;
     variable result : out   ieee.numeric_std.unresolved_unsigned
   ) is
@@ -646,13 +643,13 @@ package body codec_v1993_pkg is
   end procedure;
 
   -- ieee.numeric_std.signed
-  function encode_numeric_std_signed(data : ieee.numeric_std.signed) return code_vec_t is
+  function encode_numeric_std_signed(data : ieee.numeric_std.signed) return code_t is
   begin
     return encode_std_ulogic_array(std_ulogic_array(data));
   end function;
 
   procedure decode_numeric_std_signed(
-    constant code   : in    code_vec_t;
+    constant code   : in    code_t;
     variable index  : inout code_index_t;
     variable result : out   ieee.numeric_std.signed
   ) is
@@ -671,7 +668,7 @@ package body codec_v1993_pkg is
 
   -- Encode and Decode functions of predefined enumerated types
 
-  function decode_boolean(constant code : code_vec_t) return boolean is
+  function decode_boolean(constant code : code_t) return boolean is
     variable ret_val : boolean;
     variable index   : code_index_t := code'left;
   begin
@@ -679,7 +676,7 @@ package body codec_v1993_pkg is
     return ret_val;
   end function;
 
-  function decode_character(constant code : code_vec_t) return character is
+  function decode_character(constant code : code_t) return character is
     variable ret_val : character;
     variable index   : code_index_t := code'left;
   begin
@@ -687,7 +684,7 @@ package body codec_v1993_pkg is
     return ret_val;
   end function;
 
-  function decode_bit(constant code : code_vec_t) return bit is
+  function decode_bit(constant code : code_t) return bit is
     variable ret_val : bit;
     variable index   : code_index_t := code'left;
   begin
@@ -695,7 +692,7 @@ package body codec_v1993_pkg is
     return ret_val;
   end function;
 
-  function decode_std_ulogic(constant code : code_vec_t) return std_ulogic is
+  function decode_std_ulogic(constant code : code_t) return std_ulogic is
     variable ret_val : std_ulogic;
     variable index   : code_index_t := code'left;
   begin
@@ -703,7 +700,7 @@ package body codec_v1993_pkg is
     return ret_val;
   end function;
 
-  function decode_severity_level(constant code : code_vec_t) return severity_level is
+  function decode_severity_level(constant code : code_t) return severity_level is
     variable ret_val : severity_level;
     variable index   : code_index_t := code'left;
   begin
@@ -711,7 +708,7 @@ package body codec_v1993_pkg is
     return ret_val;
   end function;
 
-  function decode_file_open_kind(constant code : code_vec_t) return file_open_kind is
+  function decode_file_open_kind(constant code : code_t) return file_open_kind is
     variable ret_val : file_open_kind;
     variable index   : code_index_t := code'left;
   begin
@@ -719,7 +716,7 @@ package body codec_v1993_pkg is
     return ret_val;
   end function;
 
-  function decode_file_open_status(constant code : code_vec_t) return file_open_status is
+  function decode_file_open_status(constant code : code_t) return file_open_status is
     variable ret_val : file_open_status;
     variable index   : code_index_t := code'left;
   begin
@@ -730,7 +727,7 @@ package body codec_v1993_pkg is
 
   -- Encode and Decode functions of predefined scalar types
 
-  function decode_integer(constant code : code_vec_t) return integer is
+  function decode_integer(constant code : code_t) return integer is
     variable ret_val : integer;
     variable index   : code_index_t := code'left;
   begin
@@ -738,7 +735,7 @@ package body codec_v1993_pkg is
     return ret_val;
   end function;
 
-  function decode_real(constant code : code_vec_t) return real is
+  function decode_real(constant code : code_t) return real is
     variable ret_val : real;
     variable index   : code_index_t := code'left;
   begin
@@ -746,7 +743,7 @@ package body codec_v1993_pkg is
     return ret_val;
   end function;
 
-  function decode_time(constant code : code_vec_t) return time is
+  function decode_time(constant code : code_t) return time is
     variable ret_val : time;
     variable index   : code_index_t := code'left;
   begin
@@ -757,7 +754,7 @@ package body codec_v1993_pkg is
 
   -- Encode and Decode functions of predefined composite types (records)
 
-  function decode_complex(constant code : code_vec_t) return complex is
+  function decode_complex(constant code : code_t) return complex is
     variable ret_val : complex;
     variable index   : code_index_t := code'left;
   begin
@@ -765,7 +762,7 @@ package body codec_v1993_pkg is
     return ret_val;
   end function;
 
-  function decode_complex_polar(constant code : code_vec_t) return complex_polar is
+  function decode_complex_polar(constant code : code_t) return complex_polar is
     variable ret_val : complex_polar;
     variable index   : code_index_t := code'left;
   begin
@@ -776,7 +773,7 @@ package body codec_v1993_pkg is
 
   -- Encode and decode functions of predefined composite types (arrays)
 
-  function decode_string(code : code_vec_t) return string is
+  function decode_string(code : code_t) return string is
     constant RET_RANGE : range_t := decode_range(code);
     variable ret_val : string(RET_RANGE'range) := (others => NUL);
     variable index : code_index_t := code'left;
@@ -785,7 +782,7 @@ package body codec_v1993_pkg is
     return ret_val;
   end function;
 
-  function decode_raw_bit_array(code : code_vec_t; length : positive) return bit_array is
+  function decode_raw_bit_array(code : code_t; length : positive) return bit_array is
     variable ret_val : bit_array(length-1 downto 0);
     variable index : code_index_t := code'left;
   begin
@@ -793,12 +790,12 @@ package body codec_v1993_pkg is
     return ret_val;
   end function;
 
-  function decode_raw_bit_array(code : code_vec_t) return bit_array is
+  function decode_raw_bit_array(code : code_t) return bit_array is
   begin
     return decode_raw_bit_array(code, code'length*CODE_LENGTH);
   end function;
 
-  function decode_bit_array(code : code_vec_t) return bit_array is
+  function decode_bit_array(code : code_t) return bit_array is
     constant RET_RANGE : range_t := decode_range(code);
     variable ret_val : bit_array(RET_RANGE'range);
     variable index : code_index_t := code'left;
@@ -807,7 +804,7 @@ package body codec_v1993_pkg is
     return ret_val;
   end function;
 
-  function decode_bit_vector(code : code_vec_t) return bit_vector is
+  function decode_bit_vector(code : code_t) return bit_vector is
     constant RET_RANGE : range_t := decode_range(code);
     variable ret_val : bit_vector(RET_RANGE'range);
     variable index : code_index_t := code'left;
@@ -816,7 +813,7 @@ package body codec_v1993_pkg is
     return ret_val;
   end function;
 
-  function decode_numeric_bit_unsigned(code : code_vec_t) return ieee.numeric_bit.unsigned is
+  function decode_numeric_bit_unsigned(code : code_t) return ieee.numeric_bit.unsigned is
     constant RET_RANGE : range_t := decode_range(code);
     variable ret_val : ieee.numeric_bit.unsigned(RET_RANGE'range);
     variable index : code_index_t := code'left;
@@ -825,7 +822,7 @@ package body codec_v1993_pkg is
     return ret_val;
   end function;
 
-  function decode_numeric_bit_signed(code : code_vec_t) return ieee.numeric_bit.signed is
+  function decode_numeric_bit_signed(code : code_t) return ieee.numeric_bit.signed is
     constant RET_RANGE : range_t := decode_range(code);
     variable ret_val : ieee.numeric_bit.signed(RET_RANGE'range);
     variable index : code_index_t := code'left;
@@ -834,7 +831,7 @@ package body codec_v1993_pkg is
     return ret_val;
   end function;
 
-  function decode_std_ulogic_array(code : code_vec_t) return std_ulogic_array is
+  function decode_std_ulogic_array(code : code_t) return std_ulogic_array is
     constant RET_RANGE : range_t := decode_range(code);
     variable ret_val : std_ulogic_array(RET_RANGE'range);
     variable index : code_index_t := code'left;
@@ -843,7 +840,7 @@ package body codec_v1993_pkg is
     return ret_val;
   end function;
 
-  function decode_std_ulogic_vector(code : code_vec_t) return std_ulogic_vector is
+  function decode_std_ulogic_vector(code : code_t) return std_ulogic_vector is
     constant RET_RANGE : range_t := decode_range(code);
     variable ret_val : std_ulogic_vector(RET_RANGE'range);
     variable index : code_index_t := code'left;
@@ -852,7 +849,7 @@ package body codec_v1993_pkg is
     return ret_val;
   end function;
 
-  function decode_numeric_std_unsigned(code : code_vec_t) return ieee.numeric_std.unresolved_unsigned is
+  function decode_numeric_std_unsigned(code : code_t) return ieee.numeric_std.unresolved_unsigned is
     constant RET_RANGE : range_t := decode_range(code);
     variable ret_val : ieee.numeric_std.unresolved_unsigned(RET_RANGE'range);
     variable index : code_index_t := code'left;
@@ -861,7 +858,7 @@ package body codec_v1993_pkg is
     return ret_val;
   end function;
 
-  function decode_numeric_std_signed(code : code_vec_t) return ieee.numeric_std.signed is
+  function decode_numeric_std_signed(code : code_t) return ieee.numeric_std.signed is
     constant RET_RANGE : range_t := decode_range(code);
     variable ret_val : ieee.numeric_std.signed(RET_RANGE'range);
     variable index : code_index_t := code'left;
@@ -877,13 +874,13 @@ package body codec_v1993_pkg is
 
   -- Deprecated. Maintained for backward compatibility.
   function encode_array_header (
-    constant range_left1   : code_vec_t;
-    constant range_right1  : code_vec_t;
-    constant is_ascending1 : code_vec_t;
-    constant range_left2   : code_vec_t := "";
-    constant range_right2  : code_vec_t := "";
-    constant is_ascending2 : code_vec_t := "T"
-  ) return code_vec_t is
+    constant range_left1   : code_t;
+    constant range_right1  : code_t;
+    constant is_ascending1 : code_t;
+    constant range_left2   : code_t := "";
+    constant range_right2  : code_t := "";
+    constant is_ascending2 : code_t := "T"
+  ) return code_t is
   begin
     assert False report
       "This function ('encode_array_header') is deprecated. Please use 'encode_range' from codec_v1993_pkg.vhd"
@@ -896,7 +893,7 @@ package body codec_v1993_pkg is
   end function;
 
   -- Deprecated. Maintained for backward compatibility.
-  function get_range(code : code_vec_t) return range_t is
+  function get_range(code : code_t) return range_t is
     constant range_left   : integer := decode_integer(code(code'left                       to code'left+CODE_LENGTH_INTEGER-1));
     constant range_right  : integer := decode_integer(code(code'left+CODE_LENGTH_INTEGER   to code'left+CODE_LENGTH_INTEGER*2-1));
     constant is_ascending : boolean := decode_boolean(code(code'left+CODE_LENGTH_INTEGER*2 to code'left+CODE_LENGTH_INTEGER*2+CODE_LENGTH_BOOLEAN));
@@ -910,7 +907,7 @@ package body codec_v1993_pkg is
   end function;
 
   -- Deprecated. Maintained for backward compatibility.
-  function to_byte_array(value : bit_vector) return code_vec_t is
+  function to_byte_array(value : bit_vector) return code_t is
   begin
     assert False report
       "This function ('to_byte_array') is deprecated. Please use 'encode_raw_bit_array' from codec_v1993_pkg.vhd"
@@ -919,7 +916,7 @@ package body codec_v1993_pkg is
   end function;
 
   -- Deprecated. Maintained for backward compatibility.
-  function from_byte_array(byte_array : code_vec_t) return bit_vector is
+  function from_byte_array(byte_array : code_t) return bit_vector is
   begin
     assert False report
       "This function ('from_byte_array') is deprecated. Please use 'decode_raw_bit_array' from codec_v1993_pkg.vhd"
