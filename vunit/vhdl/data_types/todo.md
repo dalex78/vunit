@@ -33,3 +33,7 @@
  +
  + Have the `encode` and `decode` function closer to one another.
  + Move the `get_simulator_resolution` function out of `codec_builder.vhd` ? TBC and where ?
+
+
+TODO checker que les noms de paramètres n'ont pas changé.
+TODO Check les NULL_RANGE

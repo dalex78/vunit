@@ -22,7 +22,7 @@ use work.common_pkg.all;
 -------------------------------------------------------------------------------
 -- Package declaration
 -------------------------------------------------------------------------------
-package codec_v1993_pkg is
+package codec_pkg is
 
   -- This packages enables the user to encode any predefined type into a unique type.
   -- This unique type is a 'string' (array of 'character').
@@ -150,10 +150,10 @@ package codec_v1993_pkg is
   alias encode is encode_numeric_std_unsigned[ieee.numeric_std.unresolved_unsigned return code_t];
   alias decode is decode_numeric_std_unsigned[code_t return ieee.numeric_std.unresolved_unsigned];
 
-  function encode_numeric_std_signed(data : ieee.numeric_std.signed) return code_t;
-  function decode_numeric_std_signed(code : code_t) return ieee.numeric_std.signed;
-  alias encode is encode_numeric_std_signed[ieee.numeric_std.signed return code_t];
-  alias decode is decode_numeric_std_signed[code_t return ieee.numeric_std.signed];
+  function encode_numeric_std_signed(data : ieee.numeric_std.unresolved_signed) return code_t;
+  function decode_numeric_std_signed(code : code_t) return ieee.numeric_std.unresolved_signed;
+  alias encode is encode_numeric_std_signed[ieee.numeric_std.unresolved_signed return code_t];
+  alias decode is decode_numeric_std_signed[code_t return ieee.numeric_std.unresolved_signed];
 
 
 
@@ -253,6 +253,25 @@ package codec_v1993_pkg is
   -- API for the VUnit DEVELOPERS
   --===========================================================================
 
+  -- This section present low level procedures to encode and decode. They are not
+  -- intented to be used by the casual user.
+  -- These are intended for VUnit developers (and advanced users) to build encode
+  -- and decode procedures and functions of more complex types.
+
+  -- In most of the procedures, there are:
+  --  * the 'code' parameter is the encoded data.
+  --  * the 'index' parameter which indicates from where inside the 'code' parameter
+  --    we must encode the data or decode the data.
+  -- The 'index' is update by the procdeures in order for the next encode/decode
+  -- procedure to be abla to keep encoding or decoding the data without having to deal
+  -- with the length of the internal representation.
+  -- The implementations on the 'encode_complex' and 'decode_complex' is an example
+  -- of that feature. We first encode/decode the real part, then the imaginary part.
+
+  -- Index to track the position of an encoded element inside an instance of code_t
+  subtype code_index_t is integer;
+
+
   -----------------------------------------------------------------------------
   -- Encoding of predefined composite types (arrays)
   -----------------------------------------------------------------------------
@@ -274,8 +293,18 @@ package codec_v1993_pkg is
   -- Encode and decode functions for range
   function encode_range(range_left : integer; range_right : integer; is_ascending : boolean) return code_t;
   function decode_range(code : code_t) return range_t;
+  function decode_range(code : code_t; index : code_index_t) return range_t;
   alias encode is encode_range[integer, integer, boolean return code_t];
   alias decode is decode_range[code_t return range_t];
+  alias decode is decode_range[code_t, code_index_t return range_t];
+  procedure encode_range(
+    constant range_left : integer;
+    constant range_right : integer;
+    constant is_ascending : boolean;
+    variable index : inout code_index_t;
+    variable code : inout code_t
+  );
+  alias encode is encode_range[integer, integer, boolean, code_index_t, code_t];
 
   -- Null range constant
   constant ENCODED_NULL_RANGE : code_t;
@@ -290,9 +319,11 @@ package codec_v1993_pkg is
   function encode_raw_bit_array(data : bit_array) return code_t;
   function decode_raw_bit_array(code : code_t) return bit_array;
   function decode_raw_bit_array(code : code_t; length : positive) return bit_array;
-  -- Note that this function does not have its alias 'encode' and
-  -- 'decode' equivalent as they are homograph with the 'encode_bit_array'
-  -- and 'decode_integer' functions
+  procedure encode_raw_bit_array(constant data : in bit_array; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_raw_bit_array(constant code : in code_t; variable index : inout code_index_t; variable result : out bit_array);
+  -- Note some of these functions and procedures does not have aliases 'encode' and
+  -- 'decode' as they are homograph with the 'encode_bit_array' and
+  -- 'decode_bit_array' functions and procedures
 
   -- These functions give you the length of the encoded array depending on the
   -- length of the array to encode
@@ -300,206 +331,118 @@ package codec_v1993_pkg is
 
 
   -----------------------------------------------------------------------------
-  -- Alternate decode procedures
+  -- Alternate encode and decode procedures
   -----------------------------------------------------------------------------
-  -- These are low level procedure to decode. They are not intented to be used by the casual user.
-  -- These are intended for VUnit developers (and advanced users) to build decode
-  -- functions of more complex types.
-  -- The 'code' parameter is the encoded data.
-  -- The 'result' parameter will be updated with the decoded data after the call to the procedure.
-  -- The 'index' parameter indicates where inside the 'code' parameter the data to decode starts.
-  -- The 'index' is update in order for the next decode procedure to decode the next
-  -- encoded data in the 'code' parameter.
-  -- The implementations on the 'decode_complex' is an example of that. We first decode
-  -- the real part, the imaginary part.
-
-  -- Index to track the position of an encoded element inside an instance of code_t
-  subtype code_index_t is integer;
 
   -- Predefined enumerated types
-  procedure decode_boolean(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out boolean
-  );
-  procedure decode_character(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out character
-  );
-  procedure decode_bit(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out bit
-  );
-  procedure decode_std_ulogic(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out std_ulogic
-  );
-  procedure decode_severity_level(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out severity_level
-  );
-  procedure decode_file_open_kind(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out file_open_kind
-  );
-  procedure decode_file_open_status(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out file_open_status
-  );
+  procedure encode_boolean(constant data : in boolean; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_boolean(constant code : in code_t; variable index : inout code_index_t; variable result : out boolean);
+  alias encode is encode_boolean[boolean, code_index_t, code_t];
+  alias decode is decode_boolean[code_t, code_index_t, boolean];
 
-  alias decode is decode_boolean[
-    code_t, code_index_t, boolean
-  ];
-  alias decode is decode_character[
-    code_t, code_index_t, character
-  ];
-  alias decode is decode_bit[
-    code_t, code_index_t, bit
-  ];
-  alias decode is decode_std_ulogic[
-    code_t, code_index_t, std_ulogic
-  ];
-  alias decode is decode_severity_level[
-    code_t, code_index_t, severity_level
-  ];
-  alias decode is decode_file_open_kind[
-    code_t, code_index_t, file_open_kind
-  ];
-  alias decode is decode_file_open_status[
-    code_t, code_index_t, file_open_status
-  ];
+  procedure encode_character(constant data : in character; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_character(constant code : in code_t; variable index : inout code_index_t; variable result : out character);
+  alias encode is encode_character[character, code_index_t, code_t];
+  alias decode is decode_character[code_t, code_index_t, character];
+
+  procedure encode_bit(constant data : in bit; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_bit(constant code : in code_t; variable index : inout code_index_t; variable result : out bit);
+  alias encode is encode_bit[bit, code_index_t, code_t];
+  alias decode is decode_bit[code_t, code_index_t, bit];
+
+  procedure encode_std_ulogic(constant data : in std_ulogic; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_std_ulogic(constant code : in code_t; variable index : inout code_index_t; variable result : out std_ulogic);
+  alias encode is encode_std_ulogic[std_ulogic, code_index_t, code_t];
+  alias decode is decode_std_ulogic[code_t, code_index_t, std_ulogic];
+
+  procedure encode_severity_level(constant data : in severity_level; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_severity_level(constant code : in code_t; variable index : inout code_index_t; variable result : out severity_level);
+  alias encode is encode_severity_level[severity_level, code_index_t, code_t];
+  alias decode is decode_severity_level[code_t, code_index_t, severity_level];
+
+  procedure encode_file_open_kind(constant data : in file_open_kind; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_file_open_kind(constant code : in code_t; variable index : inout code_index_t; variable result : out file_open_kind);
+  alias encode is encode_file_open_kind[file_open_kind, code_index_t, code_t];
+  alias decode is decode_file_open_kind[code_t, code_index_t, file_open_kind];
+
+  procedure encode_file_open_status(constant data : in file_open_status; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_file_open_status(constant code : in code_t; variable index : inout code_index_t; variable result : out file_open_status);
+  alias encode is encode_file_open_status[file_open_status, code_index_t, code_t];
+  alias decode is decode_file_open_status[code_t, code_index_t, file_open_status];
 
   -- Predefined scalar types
-  procedure decode_integer(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out integer
-  );
-  procedure decode_real(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out real
-  );
-  procedure decode_time(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out time
-  );
+  procedure encode_integer(constant data : in integer; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_integer(constant code : in code_t; variable index : inout code_index_t; variable result : out integer);
+  alias encode is encode_integer[integer, code_index_t, code_t];
+  alias decode is decode_integer[code_t, code_index_t, integer];
 
-  alias decode is decode_integer[
-    code_t, positive, integer
-  ];
-  alias decode is decode_real[
-    code_t, positive, real
-  ];
-  alias decode is decode_time[
-    code_t, positive, time
-  ];
+  procedure encode_real(constant data : in real; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_real(constant code : in code_t; variable index : inout code_index_t; variable result : out real);
+  alias encode is encode_real[real, code_index_t, code_t];
+  alias decode is decode_real[code_t, code_index_t, real];
+
+  procedure encode_time(constant data : in time; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_time(constant code : in code_t; variable index : inout code_index_t; variable result : out time);
+  alias encode is encode_time[time, code_index_t, code_t];
+  alias decode is decode_time[code_t, code_index_t, time];
 
   -- Predefined composite types (records)
-  procedure decode_complex(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out complex
-  );
-  procedure decode_complex_polar(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out complex_polar
-  );
+  procedure encode_complex(constant data : in complex; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_complex(constant code : in code_t; variable index : inout code_index_t; variable result : out complex);
+  alias encode is encode_complex[complex, code_index_t, code_t];
+  alias decode is decode_complex[code_t, code_index_t, complex];
 
-  alias decode is decode_complex[
-    code_t, positive, complex
-  ];
-  alias decode is decode_complex_polar[
-    code_t, positive, complex_polar
-  ];
+  procedure encode_complex_polar(constant data : in complex_polar; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_complex_polar(constant code : in code_t; variable index : inout code_index_t; variable result : out complex_polar);
+  alias encode is encode_complex_polar[complex_polar, code_index_t, code_t];
+  alias decode is decode_complex_polar[code_t, code_index_t, complex_polar];
 
   -- Predefined composite types (arrays)
-  procedure decode_string(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out string
-  );
-  procedure decode_raw_bit_array(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out bit_array
-  );
-  procedure decode_bit_array(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out bit_array
-  );
-  procedure decode_bit_vector(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out bit_vector
-  );
-  procedure decode_numeric_bit_unsigned(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out ieee.numeric_bit.unsigned
-  );
-  procedure decode_numeric_bit_signed(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out ieee.numeric_bit.signed
-  );
-  procedure decode_std_ulogic_array(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out std_ulogic_array
-  );
-  procedure decode_std_ulogic_vector(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out std_ulogic_vector
-  );
-  procedure decode_numeric_std_unsigned(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out ieee.numeric_std.unresolved_unsigned
-  );
-  procedure decode_numeric_std_signed(
-    constant code : in code_t;
-    variable index : inout code_index_t;
-    variable result : out ieee.numeric_std.signed
-  );
+  procedure encode_string(constant data : in string; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_string(constant code : in code_t; variable index : inout code_index_t; variable result : out string);
+  alias encode is encode_string[string, code_index_t, code_t];
+  alias decode is decode_string[code_t, code_index_t, string];
 
-  alias decode is decode_string[
-    code_t, positive, string
-  ];
-  alias decode is decode_bit_array[
-    code_t, positive, bit_array
-  ];
-  alias decode is decode_bit_vector[
-    code_t, positive, bit_vector
-  ];
-  alias decode is decode_numeric_bit_unsigned[
-    code_t, positive, ieee.numeric_bit.unsigned
-  ];
-  alias decode is decode_numeric_bit_signed[
-    code_t, positive, ieee.numeric_bit.signed
-  ];
-  alias decode is decode_std_ulogic_array[
-    code_t, positive, std_ulogic_array
-  ];
-  alias decode is decode_std_ulogic_vector[
-    code_t, positive, std_ulogic_vector
-  ];
-  alias decode is decode_numeric_std_unsigned[
-    code_t, positive, ieee.numeric_std.unresolved_unsigned
-  ];
-  alias decode is decode_numeric_std_signed[
-    code_t, positive, ieee.numeric_std.signed
-  ];
+  procedure encode_bit_array(constant data : in bit_array; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_bit_array(constant code : in code_t; variable index : inout code_index_t; variable result : out bit_array);
+  alias encode is encode_bit_array[bit_array, code_index_t, code_t];
+  alias decode is decode_bit_array[code_t, code_index_t, bit_array];
+
+  procedure encode_bit_vector(constant data : in bit_vector; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_bit_vector(constant code : in code_t; variable index : inout code_index_t; variable result : out bit_vector);
+  alias encode is encode_bit_vector[bit_vector, code_index_t, code_t];
+  alias decode is decode_bit_vector[code_t, code_index_t, bit_vector];
+
+  procedure encode_numeric_bit_unsigned(constant data : in ieee.numeric_bit.unsigned; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_numeric_bit_unsigned(constant code : in code_t; variable index : inout code_index_t; variable result : out ieee.numeric_bit.unsigned);
+  alias encode is encode_numeric_bit_unsigned[ieee.numeric_bit.unsigned, code_index_t, code_t];
+  alias decode is decode_numeric_bit_unsigned[code_t, code_index_t, ieee.numeric_bit.unsigned];
+
+  procedure encode_numeric_bit_signed(constant data : in ieee.numeric_bit.signed; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_numeric_bit_signed(constant code : in code_t; variable index : inout code_index_t; variable result : out ieee.numeric_bit.signed);
+  alias encode is encode_numeric_bit_signed[ieee.numeric_bit.signed, code_index_t, code_t];
+  alias decode is decode_numeric_bit_signed[code_t, code_index_t, ieee.numeric_bit.signed];
+
+  procedure encode_std_ulogic_array(constant data : in std_ulogic_array; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_std_ulogic_array(constant code : in code_t; variable index : inout code_index_t; variable result : out std_ulogic_array);
+  alias encode is encode_std_ulogic_array[std_ulogic_array, code_index_t, code_t];
+  alias decode is decode_std_ulogic_array[code_t, code_index_t, std_ulogic_array];
+
+  procedure encode_std_ulogic_vector(constant data : in std_ulogic_vector; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_std_ulogic_vector(constant code : in code_t; variable index : inout code_index_t; variable result : out std_ulogic_vector);
+  alias encode is encode_std_ulogic_vector[std_ulogic_vector, code_index_t, code_t];
+  alias decode is decode_std_ulogic_vector[code_t, code_index_t, std_ulogic_vector];
+
+  procedure encode_numeric_std_unsigned(constant data : in ieee.numeric_std.unresolved_unsigned; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_numeric_std_unsigned(constant code : in code_t; variable index : inout code_index_t; variable result : out ieee.numeric_std.unresolved_unsigned);
+  alias encode is encode_numeric_std_unsigned[ieee.numeric_std.unresolved_unsigned, code_index_t, code_t];
+  alias decode is decode_numeric_std_unsigned[code_t, code_index_t, ieee.numeric_std.unresolved_unsigned];
+
+  procedure encode_numeric_std_signed(constant data : in ieee.numeric_std.unresolved_signed; variable index : inout code_index_t; variable code : inout code_t);
+  procedure decode_numeric_std_signed(constant code : in code_t; variable index : inout code_index_t; variable result : out ieee.numeric_std.unresolved_signed);
+  alias encode is encode_numeric_std_signed[ieee.numeric_std.unresolved_signed, code_index_t, code_t];
+  alias decode is decode_numeric_std_signed[code_t, code_index_t, ieee.numeric_std.unresolved_signed];
+
 
 
   -----------------------------------------------------------------------------
