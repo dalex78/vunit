@@ -16,3 +16,5 @@
  + Make `encode_array_header` so that it accept standard type instead of string.
  + Remove the ability to encode a second range in `encode_array_header`: never used (TBC)
  + (Note that the `get_range` function do not enable t retrieve the second range encoded by `encode_array_header`)
+ + Replace the `ieee.numeric_std.unsigned` by `ieee.numeric_std.unresolved_unsigned`
+ + Replace the `ieee.numeric_std.signed` by `ieee.numeric_std.unresolved_signed`

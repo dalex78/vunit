@@ -25,7 +25,7 @@ package common_pkg is
   -----------------------------------------------------------------------------
 
   -- Returns the ceil value of the division
-  function ceil_div(dividend : natural; divisor : natural) return natural; --TODO (extend to integer ?)
+  function ceil_div(dividend : natural; divisor : natural) return natural;
 
   -- Retrieve the time resolution of the simulator
   function get_simulator_resolution return time;
@@ -38,14 +38,14 @@ package common_pkg is
   -- Constant
   -----------------------------------------------------------------------------
 
-  -- Bytes <-> bit conversion
-  constant BB : positive := 8; -- TBC useful ?
-
   -- Time resolution of the simulator used
   constant SIMULATOR_RESOLUTION : time;
 
   -- Time resolution of the simulator used
   constant SIMULATOR_INTEGER_WIDTH : positive;
+
+  -- Time resolution of the simulator used
+  constant SIMULATOR_REAL_WIDTH : positive;
 
   -- Time resolution of the simulator used
   constant SIMULATOR_TIME_WIDTH : positive := 64; -- TODO assumed value
@@ -95,11 +95,22 @@ package body common_pkg is
   end function;
 
 
+  function get_simulator_real_width return positive is -- TBC Is this function written well enough ?
+  begin
+    if real'high = 1.0E308 then
+      return 32;
+    else
+      return 64;
+    end if;
+  end function;
+
+
   -----------------------------------------------------------------------------
   -- Constant
   -----------------------------------------------------------------------------
 
   constant SIMULATOR_RESOLUTION : time := get_simulator_resolution;
   constant SIMULATOR_INTEGER_WIDTH : positive := get_simulator_integer_width;
+  constant SIMULATOR_REAL_WIDTH : positive := get_simulator_real_width;
 
 end package body;
