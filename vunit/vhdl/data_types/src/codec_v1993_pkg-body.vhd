@@ -180,43 +180,19 @@ package body codec_v1993_pkg is
   -- real
   function encode_real(data : real) return code_vec_t is
     constant is_signed : boolean := data < 0.0;
-    variable val : real := data;
+    variable value : real := abs(data);
     variable exp : integer;
     variable low : integer;
     variable high : integer;
-
-    function log2(a : real) return integer is -- TODO
-      variable y : real;
-      variable n : integer := 0;
-    begin
-      if a = 1.0 or a = 0.0 then
-        return 0;
-      end if;
-      y := a;
-      if(a > 1.0) then
-        while y >= 2.0 loop
-          y := y / 2.0;
-          n := n + 1;
-        end loop;
-        return n;
-      else
-        while y < 1.0 loop
-          y := y * 2.0;
-          n := n - 1;
-        end loop;
-        return n;
-      end if;
-    end function;
-
   begin
-    if is_signed then
-      val := -val;
+    if value = 0.0 then
+      exp := 0;
+    else
+      exp := integer(floor(log2(value)));
     end if;
-    exp := log2(val);
-    -- Assume 53 mantissa bits TODO
-    val := val * 2.0 ** (-exp + 53);
-    high := integer(floor(val * 2.0 ** (-31)));
-    low := integer(val - real(high) * 2.0 ** 31);
+    value := value * 2.0 ** (-exp + 53); -- TODO, pq 53 ?
+    high := integer(floor(value * 2.0 ** (-31)));
+    low := integer(value - real(high) * 2.0 ** 31);
     return encode_boolean(is_signed) & encode_integer(exp) & encode_integer(low) & encode_integer(high);
   end function;
 
@@ -413,7 +389,7 @@ package body codec_v1993_pkg is
     -- groups of 2 std_ulogic_array.
     -- One std_ulogic can represent LENGTH_STD_ULOGIC=9 value: it needs 4 bits to store it.
     -- In a character (8 bits), we can store 2 std_ulogic elements.
-    return CODE_LENGTH_RANGE_TYPE + ceil_div(length, 2); -- TODO hard cded value
+    return CODE_LENGTH_RANGE_TYPE + ceil_div(length, 2); -- TODO hard coded value
   end function;
 
   function code_length_std_ulogic_vector(length : natural) return natural is

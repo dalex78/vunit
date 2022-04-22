@@ -18,3 +18,4 @@
  + (Note that the `get_range` function do not enable t retrieve the second range encoded by `encode_array_header`)
  + Replace the `ieee.numeric_std.unsigned` by `ieee.numeric_std.unresolved_unsigned`
  + Replace the `ieee.numeric_std.signed` by `ieee.numeric_std.unresolved_signed`
+ + Simplify the `log2` function used to encode `real` type by using the `ieee.real_pkg`

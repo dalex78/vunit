@@ -46,6 +46,9 @@ package common_pkg is
 
   -- Time resolution of the simulator used
   constant SIMULATOR_REAL_WIDTH : positive;
+  constant SIMULATOR_REAL_SIGN_WIDTH : positive := 1;
+  constant SIMULATOR_REAL_MANTISSE_WIDTH : positive;
+  constant SIMULATOR_REAL_EXPONENT_WIDTH : positive;
 
   -- Time resolution of the simulator used
   constant SIMULATOR_TIME_WIDTH : positive := 64; -- TODO assumed value
@@ -57,10 +60,6 @@ end package;
 -- Package body
 -------------------------------------------------------------------------------
 package body common_pkg is
-
-  -----------------------------------------------------------------------------
-  -- Functions
-  -----------------------------------------------------------------------------
 
   function ceil_div(dividend : natural; divisor : natural) return natural is
   begin
@@ -104,13 +103,29 @@ package body common_pkg is
     end if;
   end function;
 
+  function get_simulator_real_mantisse_width(SIMULATOR_REAL_WIDTH : positive) return positive is
+  begin
+    if SIMULATOR_REAL_WIDTH = 32 then
+      return 23;
+    else
+      return 52;
+    end if;
+  end function;
 
-  -----------------------------------------------------------------------------
-  -- Constant
-  -----------------------------------------------------------------------------
+  function get_simulator_real_exponent_width(SIMULATOR_REAL_WIDTH : positive) return positive is
+  begin
+    if SIMULATOR_REAL_WIDTH = 32 then
+      return 8;
+    else
+      return 11;
+    end if;
+  end function;
+
 
   constant SIMULATOR_RESOLUTION : time := get_simulator_resolution;
   constant SIMULATOR_INTEGER_WIDTH : positive := get_simulator_integer_width;
   constant SIMULATOR_REAL_WIDTH : positive := get_simulator_real_width;
+  constant SIMULATOR_REAL_MANTISSE_WIDTH : positive := get_simulator_real_mantisse_width(SIMULATOR_REAL_WIDTH);
+  constant SIMULATOR_REAL_EXPONENT_WIDTH : positive := get_simulator_real_exponent_width(SIMULATOR_REAL_WIDTH);
 
 end package body;

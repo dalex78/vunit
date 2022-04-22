@@ -25,61 +25,22 @@ use work.common_pkg.all;
 -------------------------------------------------------------------------------
 package codec_v1993_pkg is
 
-  -----------------------------------------------------------------------------
-  -- Base types and functions
-  -----------------------------------------------------------------------------
-
-  -- Target type containing the encoded values
-  subtype code_t is character;
-  -- type code_vec_t is array(integer range <>) of code_t;
+  -- This packages enables the user to encode any predefined type into a unique type.
+  -- This unique type is a 'string' (array of 'character').
+  -- The functionality can be used to build a queue capable of storing different
+  -- types in it (see the VUnit 'queue' package)
   alias code_vec_t is string;
-  -- Length (in bits) of one instance of code_t
-  constant CODE_LENGTH : positive := 8;
-  -- Number of value which can be encoded by the type code_t
-  constant CODE_NB_VALUES : positive := 2**CODE_LENGTH;
-  -- Index to track the position of an encoded element inside an instance of code_vec_t
-  subtype code_index_t is integer;
 
 
-  -----------------------------------------------------------------------------
-  -- Encoding length of predefined enumerated types
-  -----------------------------------------------------------------------------
-  -- The formulation "type'pos(type'right) + 1" gives the number of element of the enumerated type
-  constant LENGTH_BOOLEAN          : positive := boolean'pos(boolean'right) + 1;
-  constant LENGTH_CHARACTER        : positive := character'pos(character'right) + 1;
-  constant LENGTH_BIT              : positive := bit'pos(bit'right) + 1;
-  constant LENGTH_STD_ULOGIC       : positive := std_ulogic'pos(std_ulogic'right) + 1;
-  constant LENGTH_SEVERITY_LEVEL   : positive := severity_level'pos(severity_level'right) + 1;
-  constant LENGTH_FILE_OPEN_KIND   : positive := file_open_kind'pos(file_open_kind'right) + 1;
-  constant LENGTH_FILE_OPEN_STATUS : positive := file_open_status'pos(file_open_status'right) + 1;
-
-
-  -----------------------------------------------------------------------------
-  -- Encoding length of predefined enumerated types
-  -----------------------------------------------------------------------------
-  constant CODE_LENGTH_BOOLEAN          : positive := ceil_div(LENGTH_BOOLEAN, CODE_LENGTH);
-  constant CODE_LENGTH_CHARACTER        : positive := ceil_div(LENGTH_CHARACTER, CODE_LENGTH);
-  constant CODE_LENGTH_BIT              : positive := ceil_div(LENGTH_BIT, CODE_LENGTH);
-  constant CODE_LENGTH_STD_ULOGIC       : positive := ceil_div(LENGTH_STD_ULOGIC, CODE_LENGTH);
-  constant CODE_LENGTH_SEVERITY_LEVEL   : positive := ceil_div(LENGTH_SEVERITY_LEVEL, CODE_LENGTH);
-  constant CODE_LENGTH_FILE_OPEN_KIND   : positive := ceil_div(LENGTH_FILE_OPEN_KIND, CODE_LENGTH);
-  constant CODE_LENGTH_FILE_OPEN_STATUS : positive := ceil_div(LENGTH_FILE_OPEN_STATUS, CODE_LENGTH);
-
-
-  -----------------------------------------------------------------------------
-  -- Encoding length of predefined scalar types
-  -----------------------------------------------------------------------------
-  constant CODE_LENGTH_INTEGER : positive := SIMULATOR_INTEGER_WIDTH/CODE_LENGTH;
-  constant CODE_LENGTH_REAL    : positive := CODE_LENGTH_BOOLEAN + 3 * CODE_LENGTH_INTEGER;
-  constant CODE_LENGTH_TIME    : positive := SIMULATOR_TIME_WIDTH/CODE_LENGTH;
-
-
-  -----------------------------------------------------------------------------
-  -- Encoding length of predefined composite types (records)
-  -----------------------------------------------------------------------------
-  constant CODE_LENGTH_COMPLEX : positive := 2 * CODE_LENGTH_REAL;
-  constant CODE_LENGTH_COMPLEX_POLAR : positive := 2 * CODE_LENGTH_REAL;
-
+  --===========================================================================
+  -- API for the CASUAL USERS
+  --===========================================================================
+  -- All data going through the encoding process becomes a string: it is
+  -- basically becomes a sequence of bytes without any overhead for type
+  -- information. The 'codec' package doesn’t know if four bytes represents an
+  -- integer, four characters or something else. The interpretation of these
+  -- bytes takes place when the user decodes the data using a type specific
+  -- 'decode' function.
 
   -----------------------------------------------------------------------------
   -- Encode and decode functions of predefined enumerated types
@@ -157,70 +118,6 @@ package codec_v1993_pkg is
 
 
   -----------------------------------------------------------------------------
-  -- Encoding of predefined composite types (arrays)
-  -----------------------------------------------------------------------------
-
-  -- Two things need to be extracted from an array to encode it:
-  --  * The range of the array
-  --  * The data inside the array
-  -- The range encoding is performed by 'encode_range' and 'decode_range' functions.
-
-  -- There are three cases to consifered to encode array type:
-  --  * 'string'
-  --  * 'bit_vector'
-  --  * 'std_ulogic_vector'
-  -- All the other predefined array types are build from those.
-  -- 'Strings' can be directly encoded.
-  -- 'bit_vector' are transformed in 'bit_array'. The difference between these two types
-  -- is their range: 'bit_array' has an integer range while 'bit_vector' as a natural range.
-  -- Note that bit_array is a type defined in this package.
-  -- 'std_ulogic_vector' are transformed in 'std_ulogic_array'. The difference between these two types
-  -- is their range: 'std_ulogic_array' has an integer range while 'std_ulogic_vector' as a natural range.
-  -- Note that std_ulogic_array is a type defined in this package.
-  type bit_array is array(integer range <>) of bit;
-  type std_ulogic_array is array(integer range <>) of std_ulogic;
-
-  -- A range is constituted of two bounds (an left bound and a right bound)
-  -- We also need to store the ascending/descending attribute to when the
-  -- range is of lenght 1 or when the range is null
-  constant CODE_LENGTH_RANGE_TYPE : positive := 2 * CODE_LENGTH_INTEGER + CODE_LENGTH_BOOLEAN;
-
-
-  -----------------------------------------------------------------------------
-  -- Encoding length of predefined composite types (arrays) and array types defined in this package
-  -----------------------------------------------------------------------------
-  -- These functions give you the length of the encoded array depending on the
-  -- length of the array to encode
-  function code_length_string(length : natural) return natural;
-  function code_length_raw_bit_array(length : natural) return natural;
-  function code_length_bit_array(length : natural) return natural;
-  function code_length_bit_vector(length : natural) return natural;
-  function code_length_numeric_bit_unsigned(length : natural) return natural;
-  function code_length_numeric_bit_signed(length : natural) return natural;
-  function code_length_std_ulogic_array(length : natural) return natural;
-  function code_length_std_ulogic_vector(length : natural) return natural;
-  function code_length_numeric_std_unsigned(length : natural) return natural;
-  function code_length_numeric_std_signed(length : natural) return natural;
-
-
-  -----------------------------------------------------------------------------
-  -- Encode and decode functions for range
-  -----------------------------------------------------------------------------
-
-  -- This type is used so that we can return an array with any integer range.
-  -- It is not meant to carry any other information.
-  type range_t is array(integer range <>) of bit;
-
-  function encode_range(range_left : integer; range_right : integer; is_ascending : boolean) return code_vec_t;
-  function decode_range(code : code_vec_t) return range_t;
-  alias encode is encode_range[integer, integer, boolean return code_vec_t];
-  alias decode is decode_range[code_vec_t return range_t];
-
-  -- Null range constant
-  constant ENCODED_NULL_RANGE : code_vec_t;
-
-
-  -----------------------------------------------------------------------------
   -- Encode and decode functions of predefined composite types (arrays)
   -----------------------------------------------------------------------------
 
@@ -228,21 +125,6 @@ package codec_v1993_pkg is
   function decode_string(code : code_vec_t) return string;
   alias encode is encode_string[string return code_vec_t];
   alias decode is decode_string[code_vec_t return string];
-
-  -- This function is used to return the encode value of a bit_array without its range encoded.
-  -- For the casual user, this function should not be used.
-  -- To encode/decode bit_array, use encode_bit_array and decode_bit_array.
-  function encode_raw_bit_array(data : bit_array) return code_vec_t;
-  function decode_raw_bit_array(code : code_vec_t) return bit_array;
-  function decode_raw_bit_array(code : code_vec_t; length : positive) return bit_array;
-  -- Note that this function does not have its alias 'encode' and
-  -- 'decode' equivalent as they are homograph with the 'encode_bit_array'
-  -- and 'decode_integer' functions
-
-  function encode_bit_array(data : bit_array) return code_vec_t;
-  function decode_bit_array(code : code_vec_t) return bit_array;
-  alias encode is encode_bit_array[bit_array return code_vec_t];
-  alias decode is decode_bit_array[code_vec_t return bit_array];
 
   function encode_bit_vector(data : bit_vector) return code_vec_t;
   function decode_bit_vector(code : code_vec_t) return bit_vector;
@@ -258,11 +140,6 @@ package codec_v1993_pkg is
   function decode_numeric_bit_signed(code : code_vec_t) return ieee.numeric_bit.signed;
   alias encode is encode_numeric_bit_signed[ieee.numeric_bit.signed return code_vec_t];
   alias decode is decode_numeric_bit_signed[code_vec_t return ieee.numeric_bit.signed];
-
-  function encode_std_ulogic_array(data : std_ulogic_array) return code_vec_t;
-  function decode_std_ulogic_array(code : code_vec_t) return std_ulogic_array;
-  alias encode is encode_std_ulogic_array[std_ulogic_array return code_vec_t];
-  alias decode is decode_std_ulogic_array[code_vec_t return std_ulogic_array];
 
   function encode_std_ulogic_vector(data : std_ulogic_vector) return code_vec_t;
   function decode_std_ulogic_vector(code : code_vec_t) return std_ulogic_vector;
@@ -280,6 +157,149 @@ package codec_v1993_pkg is
   alias decode is decode_numeric_std_signed[code_vec_t return ieee.numeric_std.signed];
 
 
+
+  --===========================================================================
+  -- API for the ADVANCED USERS
+  --===========================================================================
+
+  -----------------------------------------------------------------------------
+  -- Base types and constants describing how the encoding is performed
+  -----------------------------------------------------------------------------
+
+  -- A character (string of length 1) stores value on 8 bits
+  constant CODE_LENGTH : positive := 8;
+  -- A character (string of length 1) can store up to 2**8 = 256 value
+  constant CODE_NB_VALUES : positive := 2**CODE_LENGTH;
+
+
+  -----------------------------------------------------------------------------
+  -- VUnit defined types
+  -----------------------------------------------------------------------------
+
+  -- The ieee.std_ulogic_vector is defined with a natural range.
+  -- If you need to encode an array of ieee.std_ulogic (or an array of any subtype
+  -- of ieee.std_ulogic) with an integer range, you can use the type 'std_ulogic_array'
+  type bit_array is array(integer range <>) of bit;
+
+  function encode_bit_array(data : bit_array) return code_vec_t;
+  function decode_bit_array(code : code_vec_t) return bit_array;
+  alias encode is encode_bit_array[bit_array return code_vec_t];
+  alias decode is decode_bit_array[code_vec_t return bit_array];
+
+  -- The std.bit_vector is defined with a natural range.
+  -- If you need to encode an array of std.bit (or an array of any subtype
+  -- of std.bit) with an integer range, you can use the type 'bit_array'
+  type std_ulogic_array is array(integer range <>) of std_ulogic;
+
+  function encode_std_ulogic_array(data : std_ulogic_array) return code_vec_t;
+  function decode_std_ulogic_array(code : code_vec_t) return std_ulogic_array;
+  alias encode is encode_std_ulogic_array[std_ulogic_array return code_vec_t];
+  alias decode is decode_std_ulogic_array[code_vec_t return std_ulogic_array];
+
+
+  -----------------------------------------------------------------------------
+  -- Encoding length for each types
+  -----------------------------------------------------------------------------
+  -- If you need to retrieve the length of the encoded data whitout,
+  -- encoding it, you can use these constants/functions:
+
+  -- Encoding length of predefined enumerated types:
+  -- The formulation "type'pos(type'right) + 1" gives the number of element of the enumerated type
+  constant LENGTH_BOOLEAN          : positive := boolean'pos(boolean'right) + 1;
+  constant LENGTH_CHARACTER        : positive := character'pos(character'right) + 1;
+  constant LENGTH_BIT              : positive := bit'pos(bit'right) + 1;
+  constant LENGTH_STD_ULOGIC       : positive := std_ulogic'pos(std_ulogic'right) + 1;
+  constant LENGTH_SEVERITY_LEVEL   : positive := severity_level'pos(severity_level'right) + 1;
+  constant LENGTH_FILE_OPEN_KIND   : positive := file_open_kind'pos(file_open_kind'right) + 1;
+  constant LENGTH_FILE_OPEN_STATUS : positive := file_open_status'pos(file_open_status'right) + 1;
+
+  -- Encoding length of predefined enumerated types:
+  constant CODE_LENGTH_BOOLEAN          : positive := ceil_div(LENGTH_BOOLEAN, CODE_LENGTH);
+  constant CODE_LENGTH_CHARACTER        : positive := ceil_div(LENGTH_CHARACTER, CODE_LENGTH);
+  constant CODE_LENGTH_BIT              : positive := ceil_div(LENGTH_BIT, CODE_LENGTH);
+  constant CODE_LENGTH_STD_ULOGIC       : positive := ceil_div(LENGTH_STD_ULOGIC, CODE_LENGTH);
+  constant CODE_LENGTH_SEVERITY_LEVEL   : positive := ceil_div(LENGTH_SEVERITY_LEVEL, CODE_LENGTH);
+  constant CODE_LENGTH_FILE_OPEN_KIND   : positive := ceil_div(LENGTH_FILE_OPEN_KIND, CODE_LENGTH);
+  constant CODE_LENGTH_FILE_OPEN_STATUS : positive := ceil_div(LENGTH_FILE_OPEN_STATUS, CODE_LENGTH);
+
+  -- Encoding length of predefined scalar types:
+  constant CODE_LENGTH_INTEGER : positive := SIMULATOR_INTEGER_WIDTH/CODE_LENGTH;
+  constant CODE_LENGTH_REAL    : positive := CODE_LENGTH_BOOLEAN + 3 * CODE_LENGTH_INTEGER;
+  constant CODE_LENGTH_TIME    : positive := SIMULATOR_TIME_WIDTH/CODE_LENGTH;
+
+  -- Encoding length of predefined composite types (records):
+  constant CODE_LENGTH_COMPLEX       : positive := 2 * CODE_LENGTH_REAL;
+  constant CODE_LENGTH_COMPLEX_POLAR : positive := 2 * CODE_LENGTH_REAL;
+
+  -- Encoding length of predefined composite types (arrays):
+  -- These functions give you the length of the encoded array depending on the
+  -- length of the array to encode
+  function code_length_string(length : natural) return natural;
+  function code_length_bit_vector(length : natural) return natural;
+  function code_length_numeric_bit_unsigned(length : natural) return natural;
+  function code_length_numeric_bit_signed(length : natural) return natural;
+  function code_length_std_ulogic_vector(length : natural) return natural;
+  function code_length_numeric_std_unsigned(length : natural) return natural;
+  function code_length_numeric_std_signed(length : natural) return natural;
+
+  -- Encoding length of array types defined in this package:
+  -- These functions give you the length of the encoded array depending on the
+  -- length of the array to encode
+  function code_length_bit_array(length : natural) return natural;
+  function code_length_std_ulogic_array(length : natural) return natural;
+
+
+
+  --===========================================================================
+  -- API for the VUnit DEVELOPERS
+  --===========================================================================
+
+  -----------------------------------------------------------------------------
+  -- Encoding of predefined composite types (arrays)
+  -----------------------------------------------------------------------------
+
+  -- Two things need to be extracted from an array to encode it:
+  --  * The range of the array
+  --  * The data inside the array
+  -- The range encoding is performed by 'encode_range' and 'decode_range' functions.
+
+  -- A range is constituted of two bounds (an left bound and a right bound)
+  -- We also need to store the ascending/descending attribute to when the
+  -- range is of lenght 1 or when the range is null
+  constant CODE_LENGTH_RANGE_TYPE : positive := 2 * CODE_LENGTH_INTEGER + CODE_LENGTH_BOOLEAN;
+
+  -- This type is used so that we can return an array with any integer range.
+  -- It is not meant to carry any other information.
+  type range_t is array(integer range <>) of bit;
+
+  -- Encode and decode functions for range
+  function encode_range(range_left : integer; range_right : integer; is_ascending : boolean) return code_vec_t;
+  function decode_range(code : code_vec_t) return range_t;
+  alias encode is encode_range[integer, integer, boolean return code_vec_t];
+  alias decode is decode_range[code_vec_t return range_t];
+
+  -- Null range constant
+  constant ENCODED_NULL_RANGE : code_vec_t;
+
+
+  -----------------------------------------------------------------------------
+  -- Encoding of bit_vector
+  -----------------------------------------------------------------------------
+
+  -- This function is used to return the encode value of a bit_array without its range encoded.
+  -- To encode/decode bit_array, use encode_bit_array and decode_bit_array.
+  function encode_raw_bit_array(data : bit_array) return code_vec_t;
+  function decode_raw_bit_array(code : code_vec_t) return bit_array;
+  function decode_raw_bit_array(code : code_vec_t; length : positive) return bit_array;
+  -- Note that this function does not have its alias 'encode' and
+  -- 'decode' equivalent as they are homograph with the 'encode_bit_array'
+  -- and 'decode_integer' functions
+
+  -- These functions give you the length of the encoded array depending on the
+  -- length of the array to encode
+  function code_length_raw_bit_array(length : natural) return natural;
+
+
   -----------------------------------------------------------------------------
   -- Alternate decode procedures
   -----------------------------------------------------------------------------
@@ -293,6 +313,9 @@ package codec_v1993_pkg is
   -- encoded data in the 'code' parameter.
   -- The implementations on the 'decode_complex' is an example of that. We first decode
   -- the real part, the imaginary part.
+
+  -- Index to track the position of an encoded element inside an instance of code_vec_t
+  subtype code_index_t is integer;
 
   -- Predefined enumerated types
   procedure decode_boolean(
@@ -484,6 +507,9 @@ package codec_v1993_pkg is
   -- Deprecated functions. Maintained for backward compatibility
   -----------------------------------------------------------------------------
 
+  -- This function is deprecated.
+  -- Use the 'encode_range' function instead.
+  -- If you need to encode two ranges, make two call to the 'encode_range' function.
   function encode_array_header(
     constant range_left1   : in code_vec_t;
     constant range_right1  : in code_vec_t;
@@ -493,10 +519,16 @@ package codec_v1993_pkg is
     constant is_ascending2 : in code_vec_t := "T"
   ) return code_vec_t;
 
+  -- This function is deprecated.
+  -- Use the 'decode_range' function instead.
   function get_range(code : code_vec_t) return range_t;
 
-  function to_byte_array(value : bit_vector) return code_vec_t;
+  -- This function is deprecated.
+  -- Use the 'encode_raw_bit_array' function instead.
+  function encode_raw_bit_array(value : bit_vector) return code_vec_t;
 
+  -- This function is deprecated.
+  -- Use the 'decode_raw_bit_array' function instead.
   function from_byte_array(byte_array : code_vec_t) return bit_vector;
 
 end package;
