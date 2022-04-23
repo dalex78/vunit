@@ -1,5 +1,7 @@
+Here is a list of change. The proposed modifications on the `codec` package are retro-compatible.
 
- + Add comments
+
+ + Add comments.
  + Removed hard coded value
  + Replace the type 'string' used to encode by an alias named 'code_t' to ease readability and maintainbility.
  + Inverse the `function` and alias `names` to ease readability and maintainbility:

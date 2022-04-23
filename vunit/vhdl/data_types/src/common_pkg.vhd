@@ -39,19 +39,19 @@ package common_pkg is
   -----------------------------------------------------------------------------
 
   -- Time resolution of the simulator used
-  constant SIMULATOR_RESOLUTION : time;
+  constant simulator_resolution : time;
 
   -- Time resolution of the simulator used
-  constant SIMULATOR_INTEGER_WIDTH : positive;
+  constant simulator_integer_width : positive;
 
   -- Time resolution of the simulator used
-  constant SIMULATOR_REAL_WIDTH : positive;
-  constant SIMULATOR_REAL_SIGN_WIDTH : positive := 1;
-  constant SIMULATOR_REAL_MANTISSE_WIDTH : positive;
-  constant SIMULATOR_REAL_EXPONENT_WIDTH : positive;
+  constant simulator_real_width : positive;
+  constant simulator_real_sign_width : positive := 1;
+  constant simulator_real_mantisse_width : positive;
+  constant simulator_real_exponent_width : positive;
 
   -- Time resolution of the simulator used
-  constant SIMULATOR_TIME_WIDTH : positive := 64; -- TODO assumed value
+  constant simulator_time_width : positive := 64; -- TODO assumed value
 
 end package;
 
@@ -60,6 +60,10 @@ end package;
 -- Package body
 -------------------------------------------------------------------------------
 package body common_pkg is
+
+  -----------------------------------------------------------------------------
+  -- Functions
+  -----------------------------------------------------------------------------
 
   function ceil_div(dividend : natural; divisor : natural) return natural is
   begin
@@ -72,12 +76,12 @@ package body common_pkg is
     variable resolution : time;
     -- Note it is important to fully constraint the constant to
     -- insure that the loop go through the array in the wanted order
-    constant RESOLUTIONS : time_array_t(1 to 8) := (
+    constant resolutions : time_array_t(1 to 8) := (
       1.0e-15 sec, 1.0e-12 sec , 1.0e-9 sec, 1.0e-6 sec, 1.0e-3 sec, 1 sec, 1 min, 1 hr
     );
   begin
-    for r in RESOLUTIONS'range loop
-      resolution := RESOLUTIONS(r);
+    for r in resolutions'range loop
+      resolution := resolutions(r);
       exit when resolution > 0 sec;
     end loop;
     return resolution;
@@ -103,18 +107,18 @@ package body common_pkg is
     end if;
   end function;
 
-  function get_simulator_real_mantisse_width(SIMULATOR_REAL_WIDTH : positive) return positive is
+  function get_simulator_real_mantisse_width(simulator_real_width : positive) return positive is
   begin
-    if SIMULATOR_REAL_WIDTH = 32 then
+    if simulator_real_width = 32 then
       return 23;
     else
       return 52;
     end if;
   end function;
 
-  function get_simulator_real_exponent_width(SIMULATOR_REAL_WIDTH : positive) return positive is
+  function get_simulator_real_exponent_width(simulator_real_width : positive) return positive is
   begin
-    if SIMULATOR_REAL_WIDTH = 32 then
+    if simulator_real_width = 32 then
       return 8;
     else
       return 11;
@@ -122,10 +126,14 @@ package body common_pkg is
   end function;
 
 
-  constant SIMULATOR_RESOLUTION : time := get_simulator_resolution;
-  constant SIMULATOR_INTEGER_WIDTH : positive := get_simulator_integer_width;
-  constant SIMULATOR_REAL_WIDTH : positive := get_simulator_real_width;
-  constant SIMULATOR_REAL_MANTISSE_WIDTH : positive := get_simulator_real_mantisse_width(SIMULATOR_REAL_WIDTH);
-  constant SIMULATOR_REAL_EXPONENT_WIDTH : positive := get_simulator_real_exponent_width(SIMULATOR_REAL_WIDTH);
+  -----------------------------------------------------------------------------
+  -- Constant
+  -----------------------------------------------------------------------------
+
+  constant simulator_resolution : time := get_simulator_resolution;
+  constant simulator_integer_width : positive := get_simulator_integer_width;
+  constant simulator_real_width : positive := get_simulator_real_width;
+  constant simulator_real_mantisse_width : positive := get_simulator_real_mantisse_width(simulator_real_width);
+  constant simulator_real_exponent_width : positive := get_simulator_real_exponent_width(simulator_real_width);
 
 end package body;

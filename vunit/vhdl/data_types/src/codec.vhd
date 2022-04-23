@@ -29,6 +29,11 @@ package codec_pkg is
   -- The functionality can be used to build a queue capable of storing different
   -- types in it (see the VUnit 'queue' package)
 
+  -- Remark: this package encode any predefined type into a string, however, this
+  -- package is not meant for serialization and deserialization of data accross
+  -- versions of VUnit. Only the following API is considered for compatibility
+  -- between VUnit version.
+
 
   --===========================================================================
   -- API for the CASUAL USERS
@@ -213,7 +218,7 @@ package body codec_pkg is
   -----------------------------------------------------------------------------
 
   function encode_boolean(data : boolean) return code_t is
-    variable ret_val : code_t(1 to CODE_LENGTH_BOOLEAN);
+    variable ret_val : code_t(1 to code_length_boolean);
     variable index   : code_index_t := ret_val'left;
   begin
     encode_boolean(data, index, ret_val);
@@ -221,7 +226,7 @@ package body codec_pkg is
   end function;
 
   function encode_character(data : character) return code_t is
-    variable ret_val : code_t(1 to CODE_LENGTH_CHARACTER);
+    variable ret_val : code_t(1 to code_length_character);
     variable index   : code_index_t := ret_val'left;
   begin
     encode_character(data, index, ret_val);
@@ -229,7 +234,7 @@ package body codec_pkg is
   end function;
 
   function encode_bit(data : bit) return code_t is
-    variable ret_val : code_t(1 to CODE_LENGTH_BIT);
+    variable ret_val : code_t(1 to code_length_bit);
     variable index   : code_index_t := ret_val'left;
   begin
     encode_bit(data, index, ret_val);
@@ -237,7 +242,7 @@ package body codec_pkg is
   end function;
 
   function encode_std_ulogic(data : std_ulogic) return code_t is
-    variable ret_val : code_t(1 to CODE_LENGTH_STD_ULOGIC);
+    variable ret_val : code_t(1 to code_length_std_ulogic);
     variable index   : code_index_t := ret_val'left;
   begin
     encode_std_ulogic(data, index, ret_val);
@@ -245,7 +250,7 @@ package body codec_pkg is
   end function;
 
   function encode_severity_level(data : severity_level) return code_t is
-    variable ret_val : code_t(1 to CODE_LENGTH_SEVERITY_LEVEL);
+    variable ret_val : code_t(1 to code_length_severity_level);
     variable index   : code_index_t := ret_val'left;
   begin
     encode_severity_level(data, index, ret_val);
@@ -253,7 +258,7 @@ package body codec_pkg is
   end function;
 
   function encode_file_open_kind(data : file_open_kind) return code_t is
-    variable ret_val : code_t(1 to CODE_LENGTH_FILE_OPEN_KIND);
+    variable ret_val : code_t(1 to code_length_file_open_kind);
     variable index   : code_index_t := ret_val'left;
   begin
     encode_file_open_kind(data, index, ret_val);
@@ -261,7 +266,7 @@ package body codec_pkg is
   end function;
 
   function encode_file_open_status(data : file_open_status) return code_t is
-    variable ret_val : code_t(1 to CODE_LENGTH_FILE_OPEN_STATUS);
+    variable ret_val : code_t(1 to code_length_file_open_status);
     variable index   : code_index_t := ret_val'left;
   begin
     encode_file_open_status(data, index, ret_val);
@@ -274,7 +279,7 @@ package body codec_pkg is
   -----------------------------------------------------------------------------
 
   function encode_integer(data : integer) return code_t is
-    variable ret_val : code_t(1 to CODE_LENGTH_INTEGER);
+    variable ret_val : code_t(1 to code_length_integer);
     variable index   : code_index_t := ret_val'left;
   begin
     encode_integer(data, index, ret_val);
@@ -282,7 +287,7 @@ package body codec_pkg is
   end function;
 
   function encode_real(data : real) return code_t is
-    variable ret_val : code_t(1 to CODE_LENGTH_REAL);
+    variable ret_val : code_t(1 to code_length_real);
     variable index   : code_index_t := ret_val'left;
   begin
     encode_real(data, index, ret_val);
@@ -290,7 +295,7 @@ package body codec_pkg is
   end function;
 
   function encode_time(data : time) return code_t is
-    variable ret_val : code_t(1 to CODE_LENGTH_TIME);
+    variable ret_val : code_t(1 to code_length_time);
     variable index   : code_index_t := ret_val'left;
   begin
     encode_time(data, index, ret_val);
@@ -303,7 +308,7 @@ package body codec_pkg is
   -----------------------------------------------------------------------------
 
   function encode_complex(data : complex) return code_t is
-    variable ret_val : code_t(1 to CODE_LENGTH_COMPLEX);
+    variable ret_val : code_t(1 to code_length_complex);
     variable index   : code_index_t := ret_val'left;
   begin
     encode_complex(data, index, ret_val);
@@ -311,7 +316,7 @@ package body codec_pkg is
   end function;
 
   function encode_complex_polar(data : complex_polar) return code_t is
-    variable ret_val : code_t(1 to CODE_LENGTH_COMPLEX_POLAR);
+    variable ret_val : code_t(1 to code_length_complex_polar);
     variable index   : code_index_t := ret_val'left;
   begin
     encode_complex_polar(data, index, ret_val);
@@ -324,7 +329,7 @@ package body codec_pkg is
   -----------------------------------------------------------------------------
 
   function encode_range(range_left : integer; range_right : integer; is_ascending : boolean) return code_t is
-    variable code  : code_t(1 to CODE_LENGTH_RANGE_TYPE);
+    variable code  : code_t(1 to code_length_range_type);
     variable index : code_index_t := code'left;
   begin
     encode_range(range_left, range_right, is_ascending, index, code);
@@ -531,19 +536,19 @@ package body codec_pkg is
 
   function decode_range(code : code_t; index : code_index_t) return range_t is
     variable code_alias : code_t(1 to code'length-index+1) := code(index to code'length);
-    constant RANGE_LEFT : integer := decode_integer(
-      code_alias(1 to CODE_LENGTH_INTEGER)
+    constant range_left : integer := decode_integer(
+      code_alias(1 to code_length_integer)
     );
-    constant RANGE_RIGHT : integer := decode_integer(
-      code_alias(1 + CODE_LENGTH_INTEGER to CODE_LENGTH_INTEGER*2)
+    constant range_right : integer := decode_integer(
+      code_alias(1 + code_length_integer to code_length_integer*2)
     );
-    constant IS_ASCENDING : boolean := decode_boolean(
-      code_alias(1 + CODE_LENGTH_INTEGER*2 to CODE_LENGTH_INTEGER*2 + CODE_LENGTH_BOOLEAN)
+    constant is_ascending : boolean := decode_boolean(
+      code_alias(1 + code_length_integer*2 to code_length_integer*2 + code_length_boolean)
     );
-    constant ret_val_ascending  : range_t(RANGE_LEFT to RANGE_RIGHT) := (others => '0');
-    constant ret_val_descending : range_t(RANGE_LEFT downto RANGE_RIGHT) := (others => '0');
+    constant ret_val_ascending  : range_t(range_left to range_right) := (others => '0');
+    constant ret_val_descending : range_t(range_left downto range_right) := (others => '0');
   begin
-    if IS_ASCENDING then
+    if is_ascending then
       return ret_val_ascending;
     else
       return ret_val_descending;
@@ -561,8 +566,8 @@ package body codec_pkg is
   -----------------------------------------------------------------------------
 
   function decode_string(code : code_t) return string is
-    constant RET_RANGE : range_t := decode_range(code);
-    variable ret_val : string(RET_RANGE'range) := (others => NUL);
+    constant ret_range : range_t := decode_range(code);
+    variable ret_val : string(ret_range'range) := (others => NUL);
     variable index : code_index_t := code'left;
   begin
     decode_string(code, index, ret_val);
@@ -570,8 +575,8 @@ package body codec_pkg is
   end function;
 
   function decode_bit_array(code : code_t) return bit_array is
-    constant RET_RANGE : range_t := decode_range(code);
-    variable ret_val : bit_array(RET_RANGE'range);
+    constant ret_range : range_t := decode_range(code);
+    variable ret_val : bit_array(ret_range'range);
     variable index : code_index_t := code'left;
   begin
     decode_bit_array(code, index, ret_val);
@@ -579,8 +584,8 @@ package body codec_pkg is
   end function;
 
   function decode_bit_vector(code : code_t) return bit_vector is
-    constant RET_RANGE : range_t := decode_range(code);
-    variable ret_val : bit_vector(RET_RANGE'range);
+    constant ret_range : range_t := decode_range(code);
+    variable ret_val : bit_vector(ret_range'range);
     variable index : code_index_t := code'left;
   begin
     decode_bit_vector(code, index, ret_val);
@@ -588,8 +593,8 @@ package body codec_pkg is
   end function;
 
   function decode_numeric_bit_unsigned(code : code_t) return ieee.numeric_bit.unsigned is
-    constant RET_RANGE : range_t := decode_range(code);
-    variable ret_val : ieee.numeric_bit.unsigned(RET_RANGE'range);
+    constant ret_range : range_t := decode_range(code);
+    variable ret_val : ieee.numeric_bit.unsigned(ret_range'range);
     variable index : code_index_t := code'left;
   begin
     decode_numeric_bit_unsigned(code, index, ret_val);
@@ -597,8 +602,8 @@ package body codec_pkg is
   end function;
 
   function decode_numeric_bit_signed(code : code_t) return ieee.numeric_bit.signed is
-    constant RET_RANGE : range_t := decode_range(code);
-    variable ret_val : ieee.numeric_bit.signed(RET_RANGE'range);
+    constant ret_range : range_t := decode_range(code);
+    variable ret_val : ieee.numeric_bit.signed(ret_range'range);
     variable index : code_index_t := code'left;
   begin
     decode_numeric_bit_signed(code, index, ret_val);
@@ -606,8 +611,8 @@ package body codec_pkg is
   end function;
 
   function decode_std_ulogic_array(code : code_t) return std_ulogic_array is
-    constant RET_RANGE : range_t := decode_range(code);
-    variable ret_val : std_ulogic_array(RET_RANGE'range);
+    constant ret_range : range_t := decode_range(code);
+    variable ret_val : std_ulogic_array(ret_range'range);
     variable index : code_index_t := code'left;
   begin
     decode_std_ulogic_array(code, index, ret_val);
@@ -615,8 +620,8 @@ package body codec_pkg is
   end function;
 
   function decode_std_ulogic_vector(code : code_t) return std_ulogic_vector is
-    constant RET_RANGE : range_t := decode_range(code);
-    variable ret_val : std_ulogic_vector(RET_RANGE'range);
+    constant ret_range : range_t := decode_range(code);
+    variable ret_val : std_ulogic_vector(ret_range'range);
     variable index : code_index_t := code'left;
   begin
     decode_std_ulogic_vector(code, index, ret_val);
@@ -624,8 +629,8 @@ package body codec_pkg is
   end function;
 
   function decode_numeric_std_unsigned(code : code_t) return ieee.numeric_std.unresolved_unsigned is
-    constant RET_RANGE : range_t := decode_range(code);
-    variable ret_val : ieee.numeric_std.unresolved_unsigned(RET_RANGE'range);
+    constant ret_range : range_t := decode_range(code);
+    variable ret_val : ieee.numeric_std.unresolved_unsigned(ret_range'range);
     variable index : code_index_t := code'left;
   begin
     decode_numeric_std_unsigned(code, index, ret_val);
@@ -633,8 +638,8 @@ package body codec_pkg is
   end function;
 
   function decode_numeric_std_signed(code : code_t) return ieee.numeric_std.unresolved_signed is
-    constant RET_RANGE : range_t := decode_range(code);
-    variable ret_val : ieee.numeric_std.unresolved_signed(RET_RANGE'range);
+    constant ret_range : range_t := decode_range(code);
+    variable ret_val : ieee.numeric_std.unresolved_signed(ret_range'range);
     variable index : code_index_t := code'left;
   begin
     decode_numeric_std_signed(code, index, ret_val);
@@ -648,9 +653,9 @@ package body codec_pkg is
 
   -- Deprecated. Maintained for backward compatibility.
   function get_range(code : code_t) return range_t is
-    constant range_left   : integer := decode_integer(code(code'left                       to code'left+CODE_LENGTH_INTEGER-1));
-    constant range_right  : integer := decode_integer(code(code'left+CODE_LENGTH_INTEGER   to code'left+CODE_LENGTH_INTEGER*2-1));
-    constant is_ascending : boolean := decode_boolean(code(code'left+CODE_LENGTH_INTEGER*2 to code'left+CODE_LENGTH_INTEGER*2+CODE_LENGTH_BOOLEAN-1));
+    constant range_left   : integer := decode_integer(code(code'left                       to code'left+code_length_integer-1));
+    constant range_right  : integer := decode_integer(code(code'left+code_length_integer   to code'left+code_length_integer*2-1));
+    constant is_ascending : boolean := decode_boolean(code(code'left+code_length_integer*2 to code'left+code_length_integer*2+code_length_boolean-1));
     constant ret_val_ascending  : range_t(range_left to range_right) := (others => '0');
     constant ret_val_descending : range_t(range_left downto range_right) := (others => '0');
   begin

@@ -144,7 +144,7 @@ package body codec_builder_2008p_pkg is
 
   procedure decode_integer_vector(constant code : in code_t; variable index : inout code_index_t; variable result : out integer_vector) is
   begin
-    index := index + CODE_LENGTH_RANGE_TYPE;
+    index := index + code_length_range_type;
     for i in result'range loop
       decode_integer(code, index, result(i));
     end loop;
@@ -163,7 +163,7 @@ package body codec_builder_2008p_pkg is
 
   procedure decode_real_vector(constant code : in code_t; variable index : inout code_index_t; variable result : out real_vector) is
   begin
-    index := index + CODE_LENGTH_RANGE_TYPE;
+    index := index + code_length_range_type;
     for i in result'range loop
       decode_real(code, index, result(i));
     end loop;
@@ -182,7 +182,7 @@ package body codec_builder_2008p_pkg is
 
   procedure decode_time_vector(constant code : in code_t; variable index : inout code_index_t; variable result : out time_vector) is
   begin
-    index := index + CODE_LENGTH_RANGE_TYPE;
+    index := index + code_length_range_type;
     for i in result'range loop
       decode_time(code, index, result(i));
     end loop;
@@ -245,17 +245,17 @@ package body codec_builder_2008p_pkg is
 
   function code_length_integer_vector(length : natural) return natural is
   begin
-    return CODE_LENGTH_RANGE_TYPE + code_length_integer * length;
+    return code_length_range_type + code_length_integer * length;
   end function;
 
   function code_length_real_vector(length : natural) return natural is
   begin
-    return CODE_LENGTH_RANGE_TYPE + code_length_real * length;
+    return code_length_range_type + code_length_real * length;
   end function;
 
   function code_length_time_vector(length : natural) return natural is
   begin
-    return CODE_LENGTH_RANGE_TYPE + code_length_time * length;
+    return code_length_range_type + code_length_time * length;
   end function;
 
   function code_length_ufixed(length : natural) return natural is

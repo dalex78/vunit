@@ -1,4 +1,4 @@
--- This file provides functionality to encode/decode standard types to/from string.
+-- This package contains support functions for standard codec building
 --
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this file,
@@ -84,6 +84,7 @@ use work.codec_builder_pkg.all;
 use work.codec_builder_2008p_pkg.all;
 
 package body codec_2008p_pkg is
+
   --===========================================================================
   -- Encode functions of new predefined types from VHDL 2008
   --===========================================================================
@@ -150,8 +151,8 @@ package body codec_2008p_pkg is
   --===========================================================================
 
   function decode_boolean_vector(code : code_t) return boolean_vector is
-    constant RET_RANGE : range_t := decode_range(code);
-    variable ret_val : boolean_vector(RET_RANGE'range);
+    constant ret_range : range_t := decode_range(code);
+    variable ret_val : boolean_vector(ret_range'range);
     variable index : code_index_t := code'left;
   begin
     decode_boolean_vector(code, index, ret_val);
@@ -159,8 +160,8 @@ package body codec_2008p_pkg is
   end function;
 
   function decode_integer_vector(code : code_t) return integer_vector is
-    constant RET_RANGE : range_t := decode_range(code);
-    variable ret_val : integer_vector(RET_RANGE'range);
+    constant ret_range : range_t := decode_range(code);
+    variable ret_val : integer_vector(ret_range'range);
     variable index : code_index_t := code'left;
   begin
     decode_integer_vector(code, index, ret_val);
@@ -168,8 +169,8 @@ package body codec_2008p_pkg is
   end function;
 
   function decode_real_vector(code : code_t) return real_vector is
-    constant RET_RANGE : range_t := decode_range(code);
-    variable ret_val : real_vector(RET_RANGE'range);
+    constant ret_range : range_t := decode_range(code);
+    variable ret_val : real_vector(ret_range'range);
     variable index : code_index_t := code'left;
   begin
     decode_real_vector(code, index, ret_val);
@@ -177,8 +178,8 @@ package body codec_2008p_pkg is
   end function;
 
   function decode_time_vector(code : code_t) return time_vector is
-    constant RET_RANGE : range_t := decode_range(code);
-    variable ret_val : time_vector(RET_RANGE'range);
+    constant ret_range : range_t := decode_range(code);
+    variable ret_val : time_vector(ret_range'range);
     variable index : code_index_t := code'left;
   begin
     decode_time_vector(code, index, ret_val);
@@ -186,8 +187,8 @@ package body codec_2008p_pkg is
   end function;
 
   function decode_ufixed(code : code_t) return unresolved_ufixed is
-    constant RET_RANGE : range_t := decode_range(code);
-    variable ret_val : unresolved_ufixed(RET_RANGE'range);
+    constant ret_range : range_t := decode_range(code);
+    variable ret_val : unresolved_ufixed(ret_range'range);
     variable index : code_index_t := code'left;
   begin
     decode_ufixed(code, index, ret_val);
@@ -195,8 +196,8 @@ package body codec_2008p_pkg is
   end function;
 
   function decode_sfixed(code : code_t) return unresolved_sfixed is
-    constant RET_RANGE : range_t := decode_range(code);
-    variable ret_val : unresolved_sfixed(RET_RANGE'range);
+    constant ret_range : range_t := decode_range(code);
+    variable ret_val : unresolved_sfixed(ret_range'range);
     variable index : code_index_t := code'left;
   begin
     decode_sfixed(code, index, ret_val);
@@ -204,8 +205,8 @@ package body codec_2008p_pkg is
   end function;
 
   function decode_float(code : code_t) return unresolved_float is
-    constant RET_RANGE : range_t := decode_range(code);
-    variable ret_val : unresolved_float(RET_RANGE'range);
+    constant ret_range : range_t := decode_range(code);
+    variable ret_val : unresolved_float(ret_range'range);
     variable index : code_index_t := code'left;
   begin
     decode_float(code, index, ret_val);

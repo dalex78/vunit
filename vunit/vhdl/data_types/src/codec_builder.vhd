@@ -31,13 +31,10 @@ package codec_builder_pkg is
   -- types in it (see the VUnit 'queue' package)
   alias code_t is string;
 
-
-  --===========================================================================
-  -- Common constants and fonctions used in this package
-  --===========================================================================
-
-  use work.common_pkg.get_simulator_resolution; -- TODO check it is visible
-
+  -- Remark: this package encode any predefined type into a string, however, this
+  -- package is not meant for serialization and deserialization of data accross
+  -- versions of VUnit. Only the following API is considered for compatibility
+  -- between VUnit version.
 
 
   --===========================================================================
@@ -49,9 +46,9 @@ package codec_builder_pkg is
   -----------------------------------------------------------------------------
 
   -- A character (string of length 1) stores value on 8 bits
-  constant CODE_LENGTH : positive := 8;
+  constant code_length : positive := 8;
   -- A character (string of length 1) can store up to 2**8 = 256 value
-  constant CODE_NB_VALUES : positive := 2**CODE_LENGTH;
+  constant code_nb_values : positive := 2**code_length;
 
 
   -----------------------------------------------------------------------------
@@ -77,31 +74,31 @@ package codec_builder_pkg is
 
   -- Encoding length of predefined enumerated types:
   -- The formulation "type'pos(type'right) + 1" gives the number of element of the enumerated type
-  constant LENGTH_BOOLEAN          : positive := boolean'pos(boolean'right) + 1;
-  constant LENGTH_CHARACTER        : positive := character'pos(character'right) + 1;
-  constant LENGTH_BIT              : positive := bit'pos(bit'right) + 1;
-  constant LENGTH_STD_ULOGIC       : positive := std_ulogic'pos(std_ulogic'right) + 1;
-  constant LENGTH_SEVERITY_LEVEL   : positive := severity_level'pos(severity_level'right) + 1;
-  constant LENGTH_FILE_OPEN_KIND   : positive := file_open_kind'pos(file_open_kind'right) + 1;
-  constant LENGTH_FILE_OPEN_STATUS : positive := file_open_status'pos(file_open_status'right) + 1;
+  constant length_boolean          : positive := boolean'pos(boolean'right) + 1;
+  constant length_character        : positive := character'pos(character'right) + 1;
+  constant length_bit              : positive := bit'pos(bit'right) + 1;
+  constant length_std_ulogic       : positive := std_ulogic'pos(std_ulogic'right) + 1;
+  constant length_severity_level   : positive := severity_level'pos(severity_level'right) + 1;
+  constant length_file_open_kind   : positive := file_open_kind'pos(file_open_kind'right) + 1;
+  constant length_file_open_status : positive := file_open_status'pos(file_open_status'right) + 1;
 
   -- Encoding length of predefined enumerated types:
-  constant CODE_LENGTH_BOOLEAN          : positive := ceil_div(LENGTH_BOOLEAN, CODE_LENGTH);
-  constant CODE_LENGTH_CHARACTER        : positive := ceil_div(LENGTH_CHARACTER, CODE_LENGTH);
-  constant CODE_LENGTH_BIT              : positive := ceil_div(LENGTH_BIT, CODE_LENGTH);
-  constant CODE_LENGTH_STD_ULOGIC       : positive := ceil_div(LENGTH_STD_ULOGIC, CODE_LENGTH);
-  constant CODE_LENGTH_SEVERITY_LEVEL   : positive := ceil_div(LENGTH_SEVERITY_LEVEL, CODE_LENGTH);
-  constant CODE_LENGTH_FILE_OPEN_KIND   : positive := ceil_div(LENGTH_FILE_OPEN_KIND, CODE_LENGTH);
-  constant CODE_LENGTH_FILE_OPEN_STATUS : positive := ceil_div(LENGTH_FILE_OPEN_STATUS, CODE_LENGTH);
+  constant code_length_boolean          : positive := ceil_div(length_boolean, code_length);
+  constant code_length_character        : positive := ceil_div(length_character, code_length);
+  constant code_length_bit              : positive := ceil_div(length_bit, code_length);
+  constant code_length_std_ulogic       : positive := ceil_div(length_std_ulogic, code_length);
+  constant code_length_severity_level   : positive := ceil_div(length_severity_level, code_length);
+  constant code_length_file_open_kind   : positive := ceil_div(length_file_open_kind, code_length);
+  constant code_length_file_open_status : positive := ceil_div(length_file_open_status, code_length);
 
   -- Encoding length of predefined scalar types:
-  constant CODE_LENGTH_INTEGER : positive := SIMULATOR_INTEGER_WIDTH/CODE_LENGTH;
-  constant CODE_LENGTH_REAL    : positive := CODE_LENGTH_BOOLEAN + 3 * CODE_LENGTH_INTEGER;
-  constant CODE_LENGTH_TIME    : positive := SIMULATOR_TIME_WIDTH/CODE_LENGTH;
+  constant code_length_integer : positive := simulator_integer_width/code_length;
+  constant code_length_real    : positive := code_length_boolean + 3 * code_length_integer;
+  constant code_length_time    : positive := simulator_time_width/code_length;
 
   -- Encoding length of predefined composite types (records):
-  constant CODE_LENGTH_COMPLEX       : positive := 2 * CODE_LENGTH_REAL;
-  constant CODE_LENGTH_COMPLEX_POLAR : positive := 2 * CODE_LENGTH_REAL;
+  constant code_length_complex       : positive := 2 * code_length_real;
+  constant code_length_complex_polar : positive := 2 * code_length_real;
 
   -- Encoding length of predefined composite types (arrays):
   -- These functions give you the length of the encoded array depending on the
@@ -157,7 +154,7 @@ package codec_builder_pkg is
   -- A range is constituted of two bounds (an left bound and a right bound)
   -- We also need to store the ascending/descending attribute to when the
   -- range is of lenght 1 or when the range is null
-  constant CODE_LENGTH_RANGE_TYPE : positive := 2 * CODE_LENGTH_INTEGER + CODE_LENGTH_BOOLEAN;
+  constant code_length_range_type : positive := 2 * code_length_integer + code_length_boolean;
 
   -- This type is used so that we can return an array with any integer range.
   -- It is not meant to carry any other information.
@@ -390,13 +387,13 @@ package body codec_builder_pkg is
     else
       code(index) := 'F';
     end if;
-    index := index + CODE_LENGTH_BOOLEAN;
+    index := index + code_length_boolean;
   end procedure;
 
   procedure decode_boolean(constant code : in code_t; variable index : inout code_index_t; variable result : out boolean) is
   begin
     result := code(index) = 'T';
-    index  := index + CODE_LENGTH_BOOLEAN;
+    index  := index + code_length_boolean;
   end procedure;
 
   -----------------------------------------------------------------------------
@@ -405,13 +402,13 @@ package body codec_builder_pkg is
   procedure encode_character(constant data : in character; variable index : inout code_index_t; variable code : inout code_t) is
   begin
     code(index) := data;
-    index       := index + CODE_LENGTH_CHARACTER;
+    index       := index + code_length_character;
   end procedure;
 
   procedure decode_character(constant code : in code_t; variable index : inout code_index_t; variable result : out character) is
   begin
     result := code(index);
-    index  := index + CODE_LENGTH_CHARACTER;
+    index  := index + code_length_character;
   end procedure;
 
   -----------------------------------------------------------------------------
@@ -424,7 +421,7 @@ package body codec_builder_pkg is
     else
       code(index) := '0';
     end if;
-    index := index + CODE_LENGTH_BIT;
+    index := index + code_length_bit;
   end procedure;
 
   procedure decode_bit(constant code : in code_t; variable index : inout code_index_t; variable result : out bit) is
@@ -434,7 +431,7 @@ package body codec_builder_pkg is
     else
       result := '0';
     end if;
-    index := index + CODE_LENGTH_BIT;
+    index := index + code_length_bit;
   end procedure;
 
   -----------------------------------------------------------------------------
@@ -444,13 +441,13 @@ package body codec_builder_pkg is
   begin
     -- The '2' is used to select the second character of the string representation
     code(index) := std_ulogic'image(data)(2);
-    index       := index + CODE_LENGTH_STD_ULOGIC;
+    index       := index + code_length_std_ulogic;
   end procedure;
 
   procedure decode_std_ulogic(constant code : in code_t; variable index : inout code_index_t; variable result : out std_ulogic) is
   begin
     result := std_ulogic'value("'" & code(index) & "'");
-    index  := index + CODE_LENGTH_STD_ULOGIC;
+    index  := index + code_length_std_ulogic;
   end procedure;
 
   -----------------------------------------------------------------------------
@@ -459,13 +456,13 @@ package body codec_builder_pkg is
   procedure encode_severity_level(constant data : in severity_level; variable index : inout code_index_t; variable code : inout code_t) is
   begin
     code(index) := character'val(severity_level'pos(data));
-    index       := index + CODE_LENGTH_SEVERITY_LEVEL;
+    index       := index + code_length_severity_level;
   end procedure;
 
   procedure decode_severity_level(constant code : in code_t; variable index : inout code_index_t; variable result : out severity_level) is
   begin
     result := severity_level'val(character'pos(code(index)));
-    index  := index + CODE_LENGTH_SEVERITY_LEVEL;
+    index  := index + code_length_severity_level;
   end procedure;
 
   -----------------------------------------------------------------------------
@@ -474,13 +471,13 @@ package body codec_builder_pkg is
   procedure encode_file_open_kind(constant data : in file_open_kind; variable index : inout code_index_t; variable code : inout code_t) is
   begin
     code(index) := character'val(file_open_kind'pos(data));
-    index       := index + CODE_LENGTH_FILE_OPEN_KIND;
+    index       := index + code_length_file_open_kind;
   end procedure;
 
   procedure decode_file_open_kind(constant code : in code_t; variable index : inout code_index_t; variable result : out file_open_kind) is
   begin
     result := file_open_kind'val(character'pos(code(index)));
-    index  := index + CODE_LENGTH_FILE_OPEN_KIND;
+    index  := index + code_length_file_open_kind;
   end procedure;
 
   -----------------------------------------------------------------------------
@@ -489,13 +486,13 @@ package body codec_builder_pkg is
   procedure encode_file_open_status(constant data : in file_open_status; variable index : inout code_index_t; variable code : inout code_t) is
   begin
     code(index) := character'val(file_open_status'pos(data));
-    index       := index + CODE_LENGTH_FILE_OPEN_STATUS;
+    index       := index + code_length_file_open_status;
   end procedure;
 
   procedure decode_file_open_status(constant code : in code_t; variable index : inout code_index_t; variable result : out file_open_status) is
   begin
     result := file_open_status'val(character'pos(code(index)));
-    index  := index + CODE_LENGTH_FILE_OPEN_STATUS;
+    index  := index + code_length_file_open_status;
   end procedure;
 
 
@@ -508,21 +505,23 @@ package body codec_builder_pkg is
   -----------------------------------------------------------------------------
   procedure encode_integer(constant data : in integer; variable index : inout code_index_t; variable code : inout code_t) is
   begin
-    code(index to index + CODE_LENGTH_INTEGER - 1) := encode_raw_bit_array(bit_array(ieee.numeric_bit.to_signed(data, SIMULATOR_INTEGER_WIDTH)));
-    index := index + CODE_LENGTH_INTEGER;
+    code(index to index + code_length_integer - 1) := encode_raw_bit_array(bit_array(ieee.numeric_bit.to_signed(data, simulator_integer_width)));
+    index := index + code_length_integer;
   end procedure;
 
   procedure decode_integer(constant code : in code_t; variable index : inout code_index_t; variable result : out integer) is
   begin
     result := to_integer(ieee.numeric_bit.signed(
-      decode_raw_bit_array(code(index to index + CODE_LENGTH_INTEGER - 1), SIMULATOR_INTEGER_WIDTH)
+      decode_raw_bit_array(code(index to index + code_length_integer - 1), simulator_integer_width)
     ));
-    index := index + CODE_LENGTH_INTEGER;
+    index := index + code_length_integer;
   end procedure;
 
   -----------------------------------------------------------------------------
   -- real
   -----------------------------------------------------------------------------
+  -- TODO Remove hard coded values (EXPONENT, MANTISSE and SIGN width constants are defined in the common_pkg)
+  -- TODO Add automatic 64 bits support
   procedure encode_real(constant data : in real; variable index : inout code_index_t; variable code : inout code_t) is
     constant is_signed : boolean := data < 0.0;
     variable value : real := abs(data);
@@ -535,7 +534,7 @@ package body codec_builder_pkg is
     else
       exp := integer(floor(log2(value)));
     end if;
-    value := value * 2.0 ** (-exp + 53); -- TODO, pq 53 ?
+    value := value * 2.0 ** (-exp + 53);
     high := integer(floor(value * 2.0 ** (-31)));
     low := integer(value - real(high) * 2.0 ** 31);
 
@@ -555,7 +554,7 @@ package body codec_builder_pkg is
     decode_integer(code, index, low);
     decode_integer(code, index, high);
 
-    ret_val := (real(low) + real(high) * 2.0**31) * 2.0 ** (exp - 53); -- TODO Support 64 bits
+    ret_val := (real(low) + real(high) * 2.0**31) * 2.0 ** (exp - 53);
     if is_signed then
       ret_val := -ret_val;
     end if;
@@ -569,37 +568,37 @@ package body codec_builder_pkg is
 
     function modulo(t : time; m : natural) return integer is
     begin
-      return integer((t - (t/m)*m)/SIMULATOR_RESOLUTION) mod m;
+      return integer((t - (t/m)*m)/simulator_resolution) mod m;
     end function;
 
     variable t       : time;
     variable ascii   : natural;
   begin
     t := data;
-    for i in index + CODE_LENGTH_TIME - 1 downto index loop
-      ascii := modulo(t, CODE_NB_VALUES);
+    for i in index + code_length_time - 1 downto index loop
+      ascii := modulo(t, code_nb_values);
       code(i) := character'val(ascii);
-      t := (t - (ascii * SIMULATOR_RESOLUTION)) / CODE_NB_VALUES;
+      t := (t - (ascii * simulator_resolution)) / code_nb_values;
     end loop;
-    index := index + CODE_LENGTH_TIME;
+    index := index + code_length_time;
   end procedure;
 
   procedure decode_time(constant code : in code_t; variable index : inout code_index_t; variable result : out time) is
-    constant code_int : code_t(1 to CODE_LENGTH_TIME) := code(index to index + CODE_LENGTH_TIME - 1);
+    constant code_int : code_t(1 to code_length_time) := code(index to index + code_length_time - 1);
     variable r : time;
     variable b : integer;
   begin
-    r := SIMULATOR_RESOLUTION * 0;
+    r := simulator_resolution * 0;
     for i in code_int'range loop
       b := character'pos(code_int(i));
-      r := r * CODE_NB_VALUES;
-      if i = 1 and b >= CODE_NB_VALUES/2 then
-        b := b - CODE_NB_VALUES;
+      r := r * code_nb_values;
+      if i = 1 and b >= code_nb_values/2 then
+        b := b - code_nb_values;
       end if;
-      r := r + b * SIMULATOR_RESOLUTION;
+      r := r + b * simulator_resolution;
     end loop;
     result := r;
-    index := index + CODE_LENGTH_TIME;
+    index := index + code_length_time;
   end procedure;
 
 
@@ -662,20 +661,20 @@ package body codec_builder_pkg is
 
   function code_length_string(length : natural) return natural is
   begin
-    return CODE_LENGTH_RANGE_TYPE + length;
+    return code_length_range_type + length;
   end function;
 
   function code_length_raw_bit_array(length : natural) return natural is
   begin
     -- bit_array are encoded inte string. The array of bits is divided into
-    -- chunks of CODE_LENGTH=8 bits (gives a number N between 0 and 255) which
+    -- chunks of code_length=8 bits (gives a number N between 0 and 255) which
     -- can be directly used to select the Nth character in the string type.
-    return ceil_div(length, CODE_LENGTH);
+    return ceil_div(length, code_length);
   end function;
 
   function code_length_bit_array(length : natural) return natural is
   begin
-    return CODE_LENGTH_RANGE_TYPE + code_length_raw_bit_array(length);
+    return code_length_range_type + code_length_raw_bit_array(length);
   end function;
 
   function code_length_bit_vector(length : natural) return natural is
@@ -693,19 +692,19 @@ package body codec_builder_pkg is
     return code_length_bit_array(length);
   end function;
 
-  constant BITS_LENGTH_STD_ULOGIC : positive := positive(ceil(log2(real(LENGTH_STD_ULOGIC))));
+  constant bits_length_std_ulogic : positive := positive(ceil(log2(real(length_std_ulogic))));
   function code_length_raw_std_ulogic_array(length : natural) return natural is
   begin
     -- std_ulogic_array are encoded into string. The array is divided into
     -- groups of 2 std_ulogic.
-    -- One std_ulogic can represent LENGTH_STD_ULOGIC=9 value: it needs BITS_LENGTH_STD_ULOGIC=4 bits to store it.
-    -- In a character (CODE_LENGTH=8 bits), we can store CODE_LENGTH/BITS_LENGTH_STD_ULOGIC=2 std_ulogic elements.
-    return ceil_div(length, CODE_LENGTH/BITS_LENGTH_STD_ULOGIC);
+    -- One std_ulogic can represent length_std_ulogic=9 value: it needs bits_length_std_ulogic=4 bits to store it.
+    -- In a character (code_length=8 bits), we can store code_length/bits_length_std_ulogic=2 std_ulogic elements.
+    return ceil_div(length, code_length/bits_length_std_ulogic);
   end function;
 
   function code_length_std_ulogic_array(length : natural) return natural is
   begin
-    return CODE_LENGTH_RANGE_TYPE + code_length_raw_std_ulogic_array(length);
+    return code_length_range_type + code_length_raw_std_ulogic_array(length);
   end function;
 
   function code_length_std_ulogic_vector(length : natural) return natural is
@@ -744,7 +743,7 @@ package body codec_builder_pkg is
 
   procedure decode_string(constant code : in code_t; variable index : inout code_index_t; variable result : out string) is
   begin
-    index := index + CODE_LENGTH_RANGE_TYPE;
+    index := index + code_length_range_type;
     result := code(index to index + result'length - 1);
     index  := index + code_length_string(result'length);
   end procedure;
@@ -753,28 +752,28 @@ package body codec_builder_pkg is
   -- raw_bit_array
   -----------------------------------------------------------------------------
   procedure encode_raw_bit_array(constant data : in bit_array; variable index : inout code_index_t; variable code : inout code_t) is
-    constant ACTUAL_CODE_LENGTH : natural := code_length_raw_bit_array(data'length);
+    constant actual_code_length : natural := code_length_raw_bit_array(data'length);
     variable value : ieee.numeric_bit.unsigned(data'length-1 downto 0) := ieee.numeric_bit.unsigned(data);
-    constant BYTE_MASK : ieee.numeric_bit.unsigned(data'length-1 downto 0) := resize(to_unsigned(CODE_NB_VALUES-1, CODE_LENGTH), data'length);
+    constant BYTE_MASK : ieee.numeric_bit.unsigned(data'length-1 downto 0) := resize(to_unsigned(code_nb_values-1, code_length), data'length);
   begin
-    for i in ACTUAL_CODE_LENGTH-1 downto 0 loop
+    for i in actual_code_length-1 downto 0 loop
       code(index + i) := character'val(to_integer(value and BYTE_MASK));
-      value := value srl CODE_LENGTH;
+      value := value srl code_length;
     end loop;
-    index := index + ACTUAL_CODE_LENGTH;
+    index := index + actual_code_length;
   end procedure;
 
   procedure decode_raw_bit_array(constant code : in code_t; variable index : inout code_index_t; variable result : out bit_array) is
-    constant ACTUAL_CODE_LENGTH : natural := code_length_raw_bit_array(result'length);
-    variable ret_val : bit_array(ACTUAL_CODE_LENGTH*CODE_LENGTH-1 downto 0);
+    constant actual_code_length : natural := code_length_raw_bit_array(result'length);
+    variable ret_val : bit_array(actual_code_length*code_length-1 downto 0);
   begin
-    for i in 0 to ACTUAL_CODE_LENGTH-1 loop
+    for i in 0 to actual_code_length-1 loop
       ret_val(
-        (ACTUAL_CODE_LENGTH-i)*CODE_LENGTH-1 downto (ACTUAL_CODE_LENGTH-i-1)*CODE_LENGTH
-      ) := bit_array(ieee.numeric_bit.to_unsigned(character'pos(code(index + i)), CODE_LENGTH));
+        (actual_code_length-i)*code_length-1 downto (actual_code_length-i-1)*code_length
+      ) := bit_array(ieee.numeric_bit.to_unsigned(character'pos(code(index + i)), code_length));
     end loop;
     result := ret_val(result'length-1 downto 0);
-    index := index + ACTUAL_CODE_LENGTH;
+    index := index + actual_code_length;
   end procedure;
 
   -----------------------------------------------------------------------------
@@ -788,7 +787,7 @@ package body codec_builder_pkg is
 
   procedure decode_bit_array(constant code : in code_t; variable index : inout code_index_t; variable result : out bit_array) is
   begin
-    index := index + CODE_LENGTH_RANGE_TYPE;
+    index := index + code_length_range_type;
     decode_raw_bit_array(code, index, result);
   end procedure;
 
@@ -851,49 +850,49 @@ package body codec_builder_pkg is
   end function;
 
   procedure encode_raw_std_ulogic_array(constant data : in std_ulogic_array; variable index : inout code_index_t; variable code : inout code_t) is
-    constant ACTUAL_CODE_LENGTH : natural := code_length_raw_std_ulogic_array(data'length);
+    constant actual_code_length : natural := code_length_raw_std_ulogic_array(data'length);
     variable i    : integer := data'left;
     variable byte : natural;
-    constant IDX_INCREMENT : integer := idx_increment(data'ascending);
-    constant FACTOR : positive := 2**BITS_LENGTH_STD_ULOGIC;
+    constant idx_increment : integer := idx_increment(data'ascending);
+    constant factor : positive := 2**bits_length_std_ulogic;
   begin
-    -- One std_ulogic can represent LENGTH_STD_ULOGIC=9 value: it needs BITS_LENGTH_STD_ULOGIC=4 bits to store it.
-    -- In a character (CODE_LENGTH=8 bits), we can store CODE_LENGTH/BITS_LENGTH_STD_ULOGIC=2 std_ulogic elements.
-    for idx in 0 to ACTUAL_CODE_LENGTH-1 loop
+    -- One std_ulogic can represent length_std_ulogic=9 value: it needs bits_length_std_ulogic=4 bits to store it.
+    -- In a character (code_length=8 bits), we can store code_length/bits_length_std_ulogic=2 std_ulogic elements.
+    for idx in 0 to actual_code_length-1 loop
       -- Encode the first std_ulogic
       byte := std_ulogic'pos(data(i));
       -- Encode the second std_ulogic (if not at the end of the std_ulogic_array)
       if i /= data'right then
-        i := i + IDX_INCREMENT;
-        byte := byte + std_ulogic'pos(data(i)) * FACTOR;
-        i := i + IDX_INCREMENT;
+        i := i + idx_increment;
+        byte := byte + std_ulogic'pos(data(i)) * factor;
+        i := i + idx_increment;
       end if;
       -- Convert into a character and stores it into the string
       code(index + idx) := character'val(byte);
     end loop;
-    index := index + ACTUAL_CODE_LENGTH;
+    index := index + actual_code_length;
   end procedure;
 
   procedure decode_raw_std_ulogic_array(constant code : in code_t; variable index : inout code_index_t; variable result : out std_ulogic_array) is
-    constant ACTUAL_CODE_LENGTH : natural := code_length_raw_std_ulogic_array(result'length);
+    constant actual_code_length : natural := code_length_raw_std_ulogic_array(result'length);
     variable i : integer := result'left;
     variable upper_nibble : natural;
-    constant IDX_INCREMENT : integer := idx_increment(result'ascending);
-    constant FACTOR : positive := 2**BITS_LENGTH_STD_ULOGIC;
+    constant idx_increment : integer := idx_increment(result'ascending);
+    constant factor : positive := 2**bits_length_std_ulogic;
   begin
-    for idx in 0 to ACTUAL_CODE_LENGTH-1 loop
+    for idx in 0 to actual_code_length-1 loop
       -- Decode the second std_ulogic
         if i /= result'right then
-          upper_nibble := character'pos(code(index + idx)) / FACTOR;
-          result(i + IDX_INCREMENT) := std_ulogic'val(upper_nibble);
+          upper_nibble := character'pos(code(index + idx)) / factor;
+          result(i + idx_increment) := std_ulogic'val(upper_nibble);
         else
           upper_nibble := 0;
         end if;
       -- Decode the first std_ulogic
-      result(i) := std_ulogic'val(character'pos(code(index + idx)) - upper_nibble*FACTOR);
-      i := i + 2*IDX_INCREMENT;
+      result(i) := std_ulogic'val(character'pos(code(index + idx)) - upper_nibble*factor);
+      i := i + 2*idx_increment;
     end loop;
-    index := index + ACTUAL_CODE_LENGTH;
+    index := index + actual_code_length;
   end procedure;
 
   -----------------------------------------------------------------------------
@@ -907,7 +906,7 @@ package body codec_builder_pkg is
 
   procedure decode_std_ulogic_array(constant code : in code_t; variable index : inout code_index_t; variable result : out std_ulogic_array) is
   begin
-    index := index + CODE_LENGTH_RANGE_TYPE;
+    index := index + code_length_range_type;
     decode_raw_std_ulogic_array(code, index, result);
   end procedure;
 
@@ -982,7 +981,7 @@ package body codec_builder_pkg is
 
   function decode_raw_bit_array(code : code_t) return bit_array is
   begin
-    return decode_raw_bit_array(code, code'length*CODE_LENGTH);
+    return decode_raw_bit_array(code, code'length*code_length);
   end function;
 
   -----------------------------------------------------------------------------
@@ -1006,7 +1005,7 @@ package body codec_builder_pkg is
 
   function decode_raw_std_ulogic_array(code : code_t) return std_ulogic_array is
   begin
-    return decode_raw_std_ulogic_array(code, code'length*CODE_LENGTH);
+    return decode_raw_std_ulogic_array(code, code'length*code_length);
   end function;
 
 
