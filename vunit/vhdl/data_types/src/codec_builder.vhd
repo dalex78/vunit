@@ -72,8 +72,8 @@ package codec_builder_pkg is
   -- If you need to retrieve the length of the encoded data whitout,
   -- encoding it, you can use these constants/functions:
 
-  -- Encoding length of predefined enumerated types:
-  -- The formulation "type'pos(type'right) + 1" gives the number of element of the enumerated type
+  -- Number of symbols of the predefined enumerated types:
+  -- The formulation "type'pos(type'right) + 1" gives the number of symbols defined by the enumerated type
   constant length_boolean          : positive := boolean'pos(boolean'right) + 1;
   constant length_character        : positive := character'pos(character'right) + 1;
   constant length_bit              : positive := bit'pos(bit'right) + 1;
@@ -83,21 +83,42 @@ package codec_builder_pkg is
   constant length_file_open_status : positive := file_open_status'pos(file_open_status'right) + 1;
 
   -- Encoding length of predefined enumerated types:
-  constant code_length_boolean          : positive := ceil_div(length_boolean, code_length);
-  constant code_length_character        : positive := ceil_div(length_character, code_length);
-  constant code_length_bit              : positive := ceil_div(length_bit, code_length);
-  constant code_length_std_ulogic       : positive := ceil_div(length_std_ulogic, code_length);
-  constant code_length_severity_level   : positive := ceil_div(length_severity_level, code_length);
-  constant code_length_file_open_kind   : positive := ceil_div(length_file_open_kind, code_length);
-  constant code_length_file_open_status : positive := ceil_div(length_file_open_status, code_length);
+  constant code_length_boolean          : positive := ceil_div(length_boolean, code_nb_values);
+  constant code_length_character        : positive := ceil_div(length_character, code_nb_values);
+  constant code_length_bit              : positive := ceil_div(length_bit, code_nb_values);
+  constant code_length_std_ulogic       : positive := ceil_div(length_std_ulogic, code_nb_values);
+  constant code_length_severity_level   : positive := ceil_div(length_severity_level, code_nb_values);
+  constant code_length_file_open_kind   : positive := ceil_div(length_file_open_kind, code_nb_values);
+  constant code_length_file_open_status : positive := ceil_div(length_file_open_status, code_nb_values);
+
 
   -- Encoding length of predefined scalar types:
-  constant code_length_integer : positive := simulator_integer_width/code_length;
-  constant code_length_real    : positive := code_length_boolean + 3 * code_length_integer;
-  constant code_length_time    : positive := simulator_time_width/code_length;
 
-  -- Encoding length of predefined composite types (records):
-  constant code_length_complex       : positive := 2 * code_length_real;
+  -- An 'integer' is encoded in the following way: it is transformed into an array of bits.
+  -- The array of bits is organized in packets of bytes. Each bytes in encoded as a
+  -- character which then form a string.
+  constant code_length_integer : positive := ceil_div(simulator_integer_width, code_length);
+
+  -- A 'real' is decomposed into:
+  -- * a sign (encoded as boolean)
+  -- * a mantisse (encoded as 2 integers)
+  -- * an exponent (encoded as 1 integer)
+  constant code_length_real : positive := code_length_boolean + 3 * code_length_integer;
+
+  -- A 'time' type is encoded TBC
+  constant code_length_time : positive := ceil_div(simulator_time_width, code_length);
+
+
+  -- Encoding length of predefined composite types (records)
+
+  -- A 'complex' is decomposed into:
+  -- * a real part (encoded as 1 integer)
+  -- * an imaginary part (encoded as 1 integer)
+  constant code_length_complex : positive := 2 * code_length_real;
+
+  -- A 'complex' is decomposed into:
+  -- * a angle (encoded as 1 integer)
+  -- * a length (encoded as 1 integer)
   constant code_length_complex_polar : positive := 2 * code_length_real;
 
   -- Encoding length of predefined composite types (arrays):
@@ -129,7 +150,7 @@ package codec_builder_pkg is
   -- and decode procedures and functions of more complex types.
 
   -- In most of the procedures, there are:
-  --  * the 'code' parameter is the encoded data.
+  --  * the 'code' parameter which is the encoded data.
   --  * the 'index' parameter which indicates from where inside the 'code' parameter
   --    we must encode the data or decode the data.
   -- The 'index' is update by the procdeures in order for the next encode/decode
@@ -568,7 +589,7 @@ package body codec_builder_pkg is
 
     function modulo(t : time; m : natural) return integer is
     begin
-      return integer((t - (t/m)*m)/simulator_resolution) mod m;
+      return integer((t - (t/m)*m) / simulator_resolution) mod m;
     end function;
 
     variable t       : time;
@@ -592,7 +613,7 @@ package body codec_builder_pkg is
     for i in code_int'range loop
       b := character'pos(code_int(i));
       r := r * code_nb_values;
-      if i = 1 and b >= code_nb_values/2 then
+      if i = 1 and b >= code_nb_values / 2 then
         b := b - code_nb_values;
       end if;
       r := r + b * simulator_resolution;
@@ -699,7 +720,7 @@ package body codec_builder_pkg is
     -- groups of 2 std_ulogic.
     -- One std_ulogic can represent length_std_ulogic=9 value: it needs bits_length_std_ulogic=4 bits to store it.
     -- In a character (code_length=8 bits), we can store code_length/bits_length_std_ulogic=2 std_ulogic elements.
-    return ceil_div(length, code_length/bits_length_std_ulogic);
+    return ceil_div(length, code_length / bits_length_std_ulogic);
   end function;
 
   function code_length_std_ulogic_array(length : natural) return natural is

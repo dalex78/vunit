@@ -1,8 +1,8 @@
-Here is a list of change. The proposed modifications on the `codec` package are retro-compatible.
+The proposed modifications on the `codec` package are retro-compatible. The `tb_codec.vhd` has not been modified to prove this.
+Here is a list of changes:
 
-
- + Add comments.
- + Removed hard coded value
+ + Add comments into the code. Add a page in documentation which show the declaration package of the `codec.vhd`.
+ + Removed hard coded value (the encode)
  + Replace the type 'string' used to encode by an alias named 'code_t' to ease readability and maintainbility.
  + Inverse the `function` and alias `names` to ease readability and maintainbility:
    ```vhdl
