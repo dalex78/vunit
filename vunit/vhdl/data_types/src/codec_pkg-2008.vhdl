@@ -57,20 +57,20 @@ package codec_pkg_2008 is
   alias encode is encode_time_vector[time_vector return code_t];
   alias decode is decode_time_vector[string return time_vector];
 
-  function encode_ufixed(data : ufixed) return code_t;
-  function decode_ufixed(code : string) return ufixed;
-  alias encode is encode_ufixed[ufixed return code_t];
-  alias decode is decode_ufixed[string return ufixed];
+  function encode_ufixed(data : unresolved_ufixed) return code_t;
+  function decode_ufixed(code : string) return unresolved_ufixed;
+  alias encode is encode_ufixed[unresolved_ufixed return code_t];
+  alias decode is decode_ufixed[string return unresolved_ufixed];
 
-  function encode_sfixed(data : sfixed) return code_t;
-  function decode_sfixed(code : string) return sfixed;
-  alias encode is encode_sfixed[sfixed return code_t];
-  alias decode is decode_sfixed[string return sfixed];
+  function encode_sfixed(data : unresolved_sfixed) return code_t;
+  function decode_sfixed(code : string) return unresolved_sfixed;
+  alias encode is encode_sfixed[unresolved_sfixed return code_t];
+  alias decode is decode_sfixed[string return unresolved_sfixed];
 
-  function encode_float(data : float) return code_t;
-  function decode_float(code : string) return float;
-  alias encode is encode_float[float return code_t];
-  alias decode is decode_float[string return float];
+  function encode_float(data : unresolved_float) return code_t;
+  function decode_float(code : string) return unresolved_float;
+  alias encode is encode_float[unresolved_float return code_t];
+  alias decode is decode_float[string return unresolved_float];
 
 
 
@@ -120,19 +120,19 @@ package codec_pkg_2008 is
   alias encode is encode_time_vector[time_vector, code_index_t, code_t];
   alias decode is decode_time_vector[code_t, code_index_t, time_vector];
 
-  procedure encode_ufixed(constant data : in ufixed; variable index : inout code_index_t; variable code : out code_t);
-  procedure decode_ufixed(constant code : in code_t; variable index : inout code_index_t; variable result : out ufixed);
-  alias encode is encode_ufixed[ufixed, code_index_t, code_t];
-  alias decode is decode_ufixed[code_t, code_index_t, ufixed];
+  procedure encode_ufixed(constant data : in unresolved_ufixed; variable index : inout code_index_t; variable code : out code_t);
+  procedure decode_ufixed(constant code : in code_t; variable index : inout code_index_t; variable result : out unresolved_ufixed);
+  alias encode is encode_ufixed[unresolved_ufixed, code_index_t, code_t];
+  alias decode is decode_ufixed[code_t, code_index_t, unresolved_ufixed];
 
-  procedure encode_sfixed(constant data : in sfixed; variable index : inout code_index_t; variable code : out code_t);
-  procedure decode_sfixed(constant code : in code_t; variable index : inout code_index_t; variable result : out sfixed);
-  alias encode is encode_sfixed[sfixed, code_index_t, code_t];
-  alias decode is decode_sfixed[code_t, code_index_t, sfixed];
+  procedure encode_sfixed(constant data : in unresolved_sfixed; variable index : inout code_index_t; variable code : out code_t);
+  procedure decode_sfixed(constant code : in code_t; variable index : inout code_index_t; variable result : out unresolved_sfixed);
+  alias encode is encode_sfixed[unresolved_sfixed, code_index_t, code_t];
+  alias decode is decode_sfixed[code_t, code_index_t, unresolved_sfixed];
 
-  procedure encode_float(constant data : in float; variable index : inout code_index_t; variable code : out code_t);
-  procedure decode_float(constant code : in code_t; variable index : inout code_index_t; variable result : out float);
-  alias encode is encode_float[float, code_index_t, code_t];
-  alias decode is decode_float[code_t, code_index_t, float];
+  procedure encode_float(constant data : in unresolved_float; variable index : inout code_index_t; variable code : out code_t);
+  procedure decode_float(constant code : in code_t; variable index : inout code_index_t; variable result : out unresolved_float);
+  alias encode is encode_float[unresolved_float, code_index_t, code_t];
+  alias decode is decode_float[code_t, code_index_t, unresolved_float];
 
 end package;
