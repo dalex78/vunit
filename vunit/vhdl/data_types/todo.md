@@ -23,8 +23,8 @@ Here is a list of changes:
  + Simplify the local `log2` function used to encode the  `real` type by using the `ieee.math_real` package.
  + The type `std_ulogic_array` is similar to the `std_ulogic_vector` but with an integer range. However, it was not the case for bit_vector. There is now a type `bit_array` for that purpose.
    The same idea could be applied to `string`, but I did not see the use case so it was not implemented.
- + For each encoded type which are a `scalar`, an `enumerated type` or a `records type`, there is a constant named `code_length_type_name` which indicate how many character are needed to encode a value of the selected type.
- + For each encoded type which an `array type`, there is a function named `function code_length_type_name(length : natural) return natural;` which indicate how many character are needed to encode a value of the selected type.
+ + For each encoded type which is a `scalar`, an `enumerated type` or a `record type`, there is a constant named `code_length_type_name` which indicate how many character are needed to encode a value of the selected type.
+ + For each encoded type which is an `array type`, there is a function named `function code_length_type_name(length : natural) return natural;` which indicate how many character are needed to encode a value of the selected type.
  + The function `to_byte_array` and `from_byte_array` are replaced (these names are not consistent with the other functions and the introduction of `bit_array` required a change of `bit_vector` to `bit_array`):
    - `function encode_raw_bit_array(data : bit_array) return code_t;`
    - `function decode_raw_bit_array(code : code_t) return bit_array;`

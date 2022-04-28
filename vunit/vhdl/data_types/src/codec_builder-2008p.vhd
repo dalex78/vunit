@@ -12,9 +12,9 @@ use std.textio.all;
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.math_complex.all;
 use ieee.numeric_bit.all;
 use ieee.numeric_std.all;
+use ieee.math_complex.all;
 use ieee.fixed_pkg.all;
 use ieee.float_pkg.all;
 
@@ -22,9 +22,6 @@ library work;
 use work.codec_builder_pkg.all;
 
 
--------------------------------------------------------------------------------
--- Package declaration
--------------------------------------------------------------------------------
 package codec_builder_2008p_pkg is
 
   --===========================================================================
@@ -34,7 +31,7 @@ package codec_builder_2008p_pkg is
   -----------------------------------------------------------------------------
   -- Encoding length for each types
   -----------------------------------------------------------------------------
-  -- If you need to retrieve the length of the encoded data whitout,
+  -- If you need to retrieve the length of the encoded data without
   -- encoding it, you can use these functions:
 
   -- These functions give you the length of the encoded array depending on the
@@ -46,6 +43,14 @@ package codec_builder_2008p_pkg is
   function code_length_ufixed(length : natural) return natural;
   function code_length_sfixed(length : natural) return natural;
   function code_length_float(length : natural) return natural;
+
+  function code_length_boolean_vector(data : boolean_vector) return natural;
+  function code_length_integer_vector(data : integer_vector) return natural;
+  function code_length_real_vector(data : real_vector) return natural;
+  function code_length_time_vector(data : time_vector) return natural;
+  function code_length_ufixed(data : ufixed) return natural;
+  function code_length_sfixed(data : sfixed) return natural;
+  function code_length_float(data : float) return natural;
 
 
 
@@ -92,9 +97,6 @@ end package;
 
 
 
--------------------------------------------------------------------------------
--- Package body
--------------------------------------------------------------------------------
 
 package body codec_builder_2008p_pkg is
 
@@ -109,7 +111,7 @@ package body codec_builder_2008p_pkg is
     variable ret_val : bit_array(data'range);
   begin
     for i in data'range loop
-      if data(i) = true then
+      if data(i) then
         ret_val(i) := '1';
       else
         ret_val(i) := '0';
@@ -123,11 +125,7 @@ package body codec_builder_2008p_pkg is
   begin
     decode_bit_array(code, index, ret_val);
     for i in ret_val'range loop
-      if ret_val(i) = '1' then
-        result(i) := true;
-      else
-        result(i) := false;
-      end if;
+      result(i) := ret_val(i) = '1';
     end loop;
   end procedure;
 
@@ -144,7 +142,7 @@ package body codec_builder_2008p_pkg is
 
   procedure decode_integer_vector(constant code : in code_t; variable index : inout code_index_t; variable result : out integer_vector) is
   begin
-    index := index + code_length_range_type;
+    index := index + code_length_integer_range;
     for i in result'range loop
       decode_integer(code, index, result(i));
     end loop;
@@ -163,7 +161,7 @@ package body codec_builder_2008p_pkg is
 
   procedure decode_real_vector(constant code : in code_t; variable index : inout code_index_t; variable result : out real_vector) is
   begin
-    index := index + code_length_range_type;
+    index := index + code_length_integer_range;
     for i in result'range loop
       decode_real(code, index, result(i));
     end loop;
@@ -182,7 +180,7 @@ package body codec_builder_2008p_pkg is
 
   procedure decode_time_vector(constant code : in code_t; variable index : inout code_index_t; variable result : out time_vector) is
   begin
-    index := index + code_length_range_type;
+    index := index + code_length_integer_range;
     for i in result'range loop
       decode_time(code, index, result(i));
     end loop;
@@ -238,39 +236,95 @@ package body codec_builder_2008p_pkg is
   -- Functions which gives the number of code_t element to be used to encode the type
   --===========================================================================
 
+  -----------------------------------------------------------------------------
+  -- boolean_vector
+  -----------------------------------------------------------------------------
   function code_length_boolean_vector(length : natural) return natural is
   begin
     return code_length_bit_array(length);
   end function;
 
+  function code_length_boolean_vector(data : boolean_vector) return natural is
+  begin
+    return code_length_boolean_vector(data'length);
+  end function;
+
+  -----------------------------------------------------------------------------
+  -- integer_vector
+  -----------------------------------------------------------------------------
   function code_length_integer_vector(length : natural) return natural is
   begin
-    return code_length_range_type + code_length_integer * length;
+    return code_length_integer_range + code_length_integer * length;
   end function;
 
+  function code_length_integer_vector(data : integer_vector) return natural is
+  begin
+    return code_length_integer_vector(data'length);
+  end function;
+
+  -----------------------------------------------------------------------------
+  -- real_vector
+  -----------------------------------------------------------------------------
   function code_length_real_vector(length : natural) return natural is
   begin
-    return code_length_range_type + code_length_real * length;
+    return code_length_integer_range + code_length_real * length;
   end function;
 
+  function code_length_real_vector(data : real_vector) return natural is
+  begin
+    return code_length_real_vector(data'length);
+  end function;
+
+  -----------------------------------------------------------------------------
+  -- time_vector
+  -----------------------------------------------------------------------------
   function code_length_time_vector(length : natural) return natural is
   begin
-    return code_length_range_type + code_length_time * length;
+    return code_length_integer_range + code_length_time * length;
   end function;
 
+  function code_length_time_vector(data : time_vector) return natural is
+  begin
+    return code_length_time_vector(data'length);
+  end function;
+
+  -----------------------------------------------------------------------------
+  -- unresolved_ufixed
+  -----------------------------------------------------------------------------
   function code_length_ufixed(length : natural) return natural is
   begin
     return code_length_std_ulogic_array(length);
   end function;
 
+  function code_length_ufixed(data : ufixed) return natural is
+  begin
+    return code_length_ufixed(data'length);
+  end function;
+
+  -----------------------------------------------------------------------------
+  -- unresolved_sfixed
+  -----------------------------------------------------------------------------
   function code_length_sfixed(length : natural) return natural is
   begin
     return code_length_std_ulogic_array(length);
   end function;
 
+  function code_length_sfixed(data : sfixed) return natural is
+  begin
+    return code_length_sfixed(data'length);
+  end function;
+
+  -----------------------------------------------------------------------------
+  -- unresolved_float
+  -----------------------------------------------------------------------------
   function code_length_float(length : natural) return natural is
   begin
     return code_length_std_ulogic_array(length);
+  end function;
+
+  function code_length_float(data : float) return natural is
+  begin
+    return code_length_float(data'length);
   end function;
 
 end package body;

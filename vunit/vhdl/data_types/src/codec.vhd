@@ -11,17 +11,14 @@ use std.textio.all;
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.math_complex.all;
 use ieee.numeric_bit.all;
 use ieee.numeric_std.all;
+use ieee.math_complex.all;
 
 library work;
 use work.codec_builder_pkg.all;
 
 
--------------------------------------------------------------------------------
--- Package declaration
--------------------------------------------------------------------------------
 package codec_pkg is
 
   -- This packages enables the user to encode any predefined type into a unique type.
@@ -29,16 +26,15 @@ package codec_pkg is
   -- The functionality can be used to build a queue capable of storing different
   -- types in it (see the VUnit 'queue' package)
 
-  -- Remark: this package encode any predefined type into a string, however, this
+  -- Remark: this package encodes any predefined type into a string, however, this
   -- package is not meant for serialization and deserialization of data accross
-  -- versions of VUnit. Only the following API is considered for compatibility
-  -- between VUnit version.
+  -- versions of VUnit.
 
 
   --===========================================================================
   -- API for the CASUAL USERS
   --===========================================================================
-  -- All data going through the encoding process becomes a string: it is
+  -- All data going through the encoding process becomes a string: it
   -- basically becomes a sequence of bytes without any overhead for type
   -- information. The 'codec' package doesn’t know if four bytes represents an
   -- integer, four characters or something else. The interpretation of these
@@ -190,6 +186,37 @@ package codec_pkg is
   alias decode is decode_numeric_std_signed[code_t return ieee.numeric_std.unresolved_signed];
 
 
+  --===========================================================================
+  -- API for the ADVANCED USERS
+  --===========================================================================
+
+  -----------------------------------------------------------------------------
+  -- Encoding of 'raw' string, 'raw' bit_array and 'raw' std_ulogic_array
+  -----------------------------------------------------------------------------
+  -- We define functions which encode a 'string', 'bit_array' or a 'std_ulogic_array' without its range.
+  -- It can be useful when you encode a value which has always same width. For example,
+  -- integers are encoded using 'encode_raw_bit_array' because thay are always
+  -- 32 bits (or 64 bits in VHDL-2019).
+
+  -- Note that the 'encode' functions do not have aliases functions 'encode' as they
+  -- are homograph with the 'encode_string', 'encode_bit_array' or
+  -- 'encode_std_ulogic_array'. Same thing for decode functions.
+
+  -- To encode/decode string with its range, use encode_string and decode_string.
+  function encode_raw_string(data : string) return code_t;
+  function decode_raw_string(code : code_t) return string;
+  function decode_raw_string(code : code_t; length : positive) return string;
+
+  -- To encode/decode bit_array with its range, use encode_bit_array and decode_bit_array.
+  function encode_raw_bit_array(data : bit_array) return code_t;
+  function decode_raw_bit_array(code : code_t) return bit_array;
+  function decode_raw_bit_array(code : code_t; length : positive) return bit_array;
+
+  -- To encode/decode std_ulogic_array with its range, use encode_std_ulogic_array and decode_std_ulogic_array.
+  function encode_raw_std_ulogic_array(data : std_ulogic_array) return code_t;
+  function decode_raw_std_ulogic_array(code : code_t) return std_ulogic_array;
+  function decode_raw_std_ulogic_array(code : code_t; length : positive) return std_ulogic_array;
+
 
   --===========================================================================
   -- Deprecated functions. Maintained for backward compatibility
@@ -203,9 +230,6 @@ end package;
 
 
 
--------------------------------------------------------------------------------
--- Package body
--------------------------------------------------------------------------------
 package body codec_pkg is
 
   --===========================================================================
@@ -329,11 +353,11 @@ package body codec_pkg is
   -----------------------------------------------------------------------------
 
   function encode_range(range_left : integer; range_right : integer; is_ascending : boolean) return code_t is
-    variable code  : code_t(1 to code_length_range_type);
-    variable index : code_index_t := code'left;
+    variable ret_val : code_t(1 to code_length_integer_range);
+    variable index   : code_index_t := ret_val'left;
   begin
-    encode_range(range_left, range_right, is_ascending, index, code);
-    return code;
+    encode_range(range_left, range_right, is_ascending, index, ret_val);
+    return ret_val;
   end function;
 
 
@@ -343,7 +367,7 @@ package body codec_pkg is
 
   function encode_string(data : string) return code_t is
     variable ret_val : code_t(1 to code_length_string(data'length));
-    variable index : code_index_t := ret_val'left;
+    variable index   : code_index_t := ret_val'left;
   begin
     encode_string(data, index, ret_val);
     return ret_val;
@@ -351,15 +375,15 @@ package body codec_pkg is
 
   function encode_bit_array(data : bit_array) return code_t is
     variable ret_val : code_t(1 to code_length_bit_array(data'length));
-    variable index : code_index_t := ret_val'left;
+    variable index   : code_index_t := ret_val'left;
   begin
     encode_bit_array(data, index, ret_val);
     return ret_val;
   end function;
 
   function encode_bit_vector(data : bit_vector) return code_t is
-    variable ret_val : code_t(1 to code_length_string(data'length));
-    variable index : code_index_t := ret_val'left;
+    variable ret_val : code_t(1 to code_length_bit_vector(data'length));
+    variable index   : code_index_t := ret_val'left;
   begin
     encode_bit_vector(data, index, ret_val);
     return ret_val;
@@ -367,7 +391,7 @@ package body codec_pkg is
 
   function encode_numeric_bit_unsigned(data : ieee.numeric_bit.unsigned) return code_t is
     variable ret_val : code_t(1 to code_length_numeric_bit_unsigned(data'length));
-    variable index : code_index_t := ret_val'left;
+    variable index   : code_index_t := ret_val'left;
   begin
     encode_numeric_bit_unsigned(data, index, ret_val);
     return ret_val;
@@ -375,7 +399,7 @@ package body codec_pkg is
 
   function encode_numeric_bit_signed(data : ieee.numeric_bit.signed) return code_t is
     variable ret_val : code_t(1 to code_length_numeric_bit_signed(data'length));
-    variable index : code_index_t := ret_val'left;
+    variable index   : code_index_t := ret_val'left;
   begin
     encode_numeric_bit_signed(data, index, ret_val);
     return ret_val;
@@ -383,7 +407,7 @@ package body codec_pkg is
 
   function encode_std_ulogic_array(data : std_ulogic_array) return code_t is
     variable ret_val : code_t(1 to code_length_std_ulogic_array(data'length));
-    variable index : code_index_t := ret_val'left;
+    variable index   : code_index_t := ret_val'left;
   begin
     encode_std_ulogic_array(data, index, ret_val);
     return ret_val;
@@ -391,7 +415,7 @@ package body codec_pkg is
 
   function encode_std_ulogic_vector(data : std_ulogic_vector) return code_t is
     variable ret_val : code_t(1 to code_length_std_ulogic_vector(data'length));
-    variable index : code_index_t := ret_val'left;
+    variable index   : code_index_t := ret_val'left;
   begin
     encode_std_ulogic_vector(data, index, ret_val);
     return ret_val;
@@ -399,7 +423,7 @@ package body codec_pkg is
 
   function encode_numeric_std_unsigned(data : ieee.numeric_std.unresolved_unsigned) return code_t is
     variable ret_val : code_t(1 to code_length_numeric_std_unsigned(data'length));
-    variable index : code_index_t := ret_val'left;
+    variable index   : code_index_t := ret_val'left;
   begin
     encode_numeric_std_unsigned(data, index, ret_val);
     return ret_val;
@@ -407,7 +431,7 @@ package body codec_pkg is
 
   function encode_numeric_std_signed(data : ieee.numeric_std.unresolved_signed) return code_t is
     variable ret_val : code_t(1 to code_length_numeric_std_signed(data'length));
-    variable index : code_index_t := ret_val'left;
+    variable index   : code_index_t := ret_val'left;
   begin
     encode_numeric_std_signed(data, index, ret_val);
     return ret_val;
@@ -568,7 +592,7 @@ package body codec_pkg is
   function decode_string(code : code_t) return string is
     constant ret_range : range_t := decode_range(code);
     variable ret_val : string(ret_range'range) := (others => NUL);
-    variable index : code_index_t := code'left;
+    variable index   : code_index_t := code'left;
   begin
     decode_string(code, index, ret_val);
     return ret_val;
@@ -577,7 +601,7 @@ package body codec_pkg is
   function decode_bit_array(code : code_t) return bit_array is
     constant ret_range : range_t := decode_range(code);
     variable ret_val : bit_array(ret_range'range);
-    variable index : code_index_t := code'left;
+    variable index   : code_index_t := code'left;
   begin
     decode_bit_array(code, index, ret_val);
     return ret_val;
@@ -586,7 +610,7 @@ package body codec_pkg is
   function decode_bit_vector(code : code_t) return bit_vector is
     constant ret_range : range_t := decode_range(code);
     variable ret_val : bit_vector(ret_range'range);
-    variable index : code_index_t := code'left;
+    variable index   : code_index_t := code'left;
   begin
     decode_bit_vector(code, index, ret_val);
     return ret_val;
@@ -595,7 +619,7 @@ package body codec_pkg is
   function decode_numeric_bit_unsigned(code : code_t) return ieee.numeric_bit.unsigned is
     constant ret_range : range_t := decode_range(code);
     variable ret_val : ieee.numeric_bit.unsigned(ret_range'range);
-    variable index : code_index_t := code'left;
+    variable index   : code_index_t := code'left;
   begin
     decode_numeric_bit_unsigned(code, index, ret_val);
     return ret_val;
@@ -604,7 +628,7 @@ package body codec_pkg is
   function decode_numeric_bit_signed(code : code_t) return ieee.numeric_bit.signed is
     constant ret_range : range_t := decode_range(code);
     variable ret_val : ieee.numeric_bit.signed(ret_range'range);
-    variable index : code_index_t := code'left;
+    variable index   : code_index_t := code'left;
   begin
     decode_numeric_bit_signed(code, index, ret_val);
     return ret_val;
@@ -613,7 +637,7 @@ package body codec_pkg is
   function decode_std_ulogic_array(code : code_t) return std_ulogic_array is
     constant ret_range : range_t := decode_range(code);
     variable ret_val : std_ulogic_array(ret_range'range);
-    variable index : code_index_t := code'left;
+    variable index   : code_index_t := code'left;
   begin
     decode_std_ulogic_array(code, index, ret_val);
     return ret_val;
@@ -622,7 +646,7 @@ package body codec_pkg is
   function decode_std_ulogic_vector(code : code_t) return std_ulogic_vector is
     constant ret_range : range_t := decode_range(code);
     variable ret_val : std_ulogic_vector(ret_range'range);
-    variable index : code_index_t := code'left;
+    variable index   : code_index_t := code'left;
   begin
     decode_std_ulogic_vector(code, index, ret_val);
     return ret_val;
@@ -631,7 +655,7 @@ package body codec_pkg is
   function decode_numeric_std_unsigned(code : code_t) return ieee.numeric_std.unresolved_unsigned is
     constant ret_range : range_t := decode_range(code);
     variable ret_val : ieee.numeric_std.unresolved_unsigned(ret_range'range);
-    variable index : code_index_t := code'left;
+    variable index   : code_index_t := code'left;
   begin
     decode_numeric_std_unsigned(code, index, ret_val);
     return ret_val;
@@ -640,10 +664,87 @@ package body codec_pkg is
   function decode_numeric_std_signed(code : code_t) return ieee.numeric_std.unresolved_signed is
     constant ret_range : range_t := decode_range(code);
     variable ret_val : ieee.numeric_std.unresolved_signed(ret_range'range);
-    variable index : code_index_t := code'left;
+    variable index   : code_index_t := code'left;
   begin
     decode_numeric_std_signed(code, index, ret_val);
     return ret_val;
+  end function;
+
+
+  --===========================================================================
+  -- Encode and Decode functions of for a 'raw' string, 'raw' bit_array and 'raw' std_ulogic_array
+  --===========================================================================
+
+  -----------------------------------------------------------------------------
+  -- raw_string
+  -----------------------------------------------------------------------------
+  function encode_raw_string(data : string) return code_t is
+    variable ret_val : code_t(1 to code_length_raw_string(data'length));
+    variable index : code_index_t := ret_val'left;
+  begin
+    encode_raw_string(data, index, ret_val);
+    return ret_val;
+  end function;
+
+  function decode_raw_string(code : code_t; length : positive) return string is
+    variable ret_val : string(length-1 downto 0);
+    variable index : code_index_t := code'left;
+  begin
+    decode_raw_string(code, index, ret_val);
+    return ret_val;
+  end function;
+
+  function decode_raw_string(code : code_t) return string is
+  begin
+    return decode_raw_string(code, code'length * basic_code_length);
+  end function;
+
+  -----------------------------------------------------------------------------
+  -- raw_bit_array
+  -----------------------------------------------------------------------------
+  function encode_raw_bit_array(data : bit_array) return code_t is
+    variable ret_val : code_t(1 to code_length_raw_bit_array(data'length));
+    variable index : code_index_t := ret_val'left;
+  begin
+    encode_raw_bit_array(data, index, ret_val);
+    return ret_val;
+  end function;
+
+  function decode_raw_bit_array(code : code_t; length : positive) return bit_array is
+    variable ret_val : bit_array(length-1 downto 0);
+    variable index : code_index_t := code'left;
+  begin
+    decode_raw_bit_array(code, index, ret_val);
+    return ret_val;
+  end function;
+
+  function decode_raw_bit_array(code : code_t) return bit_array is
+  begin
+    return decode_raw_bit_array(code, code'length * basic_code_length);
+  end function;
+
+  -----------------------------------------------------------------------------
+  -- raw_std_ulogic_array
+  -----------------------------------------------------------------------------
+  function encode_raw_std_ulogic_array(data : std_ulogic_array) return code_t is
+    variable ret_val : code_t(1 to code_length_raw_std_ulogic_array(data'length));
+    variable index : code_index_t := ret_val'left;
+  begin
+    encode_raw_std_ulogic_array(data, index, ret_val);
+    return ret_val;
+  end function;
+
+  function decode_raw_std_ulogic_array(code : code_t; length : positive) return std_ulogic_array is
+    variable ret_val : std_ulogic_array(length-1 downto 0);
+    variable index : code_index_t := code'left;
+  begin
+    decode_raw_std_ulogic_array(code, index, ret_val);
+    return ret_val;
+  end function;
+
+  function decode_raw_std_ulogic_array(code : code_t) return std_ulogic_array is
+  begin
+    return decode_raw_std_ulogic_array(code, code'length * basic_code_length);
   end function;
 
 
@@ -660,7 +761,7 @@ package body codec_pkg is
     constant ret_val_descending : range_t(range_left downto range_right) := (others => '0');
   begin
     assert False report
-      "This function ('get_range') is deprecated. Please use 'decode_range' from codec_v1993_pkg.vhd"
+      "This function ('get_range') is deprecated. Please use 'decode_range' from codec_pkg.vhd"
     severity warning;
     return decode_range(code);
   end function;

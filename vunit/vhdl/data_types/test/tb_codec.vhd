@@ -154,6 +154,8 @@ begin
       elsif run("Test that real can be encoded and decoded") then
         check_relation(decode_real(encode_real(real'low)) = real'low);
         check_relation(decode_real(encode_real(real'high)) = real'high);
+        check_relation(decode_real(encode_real(2.5)) = 2.5);
+        check_relation(decode_real(encode_real(-3.14)) = -3.14);
 
         check_relation(decode_real(encode_real(positive_zero)) = positive_zero);
         check_relation(decode_real(encode_real(negative_zero)) = negative_zero);
@@ -221,6 +223,7 @@ begin
         check_relation(get_decoded_range_right(decode_string(encode_string(string_15_downto_4))) = 4);
       elsif run("Test that bit_vector can be encoded and decoded") then
         bit_vector_5_downto_3 := "101";
+        check_relation(decode_bit_vector(encode_bit_vector("10011")) = bit_vector'("10011"));
         check_relation(decode_bit_vector(encode_bit_vector("101")) = bit_vector'("101"));
         check_relation(decode_bit_vector(encode_bit_vector("1")) = bit_vector'("1"));
         check_relation(decode_bit_vector(encode_bit_vector("")) = bit_vector'(""));

@@ -12,18 +12,16 @@ use std.textio.all;
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.math_complex.all;
 use ieee.numeric_bit.all;
 use ieee.numeric_std.all;
+use ieee.math_complex.all;
 use ieee.fixed_pkg.all;
 use ieee.float_pkg.all;
 
 library work;
 use work.codec_builder_pkg.all;
 
--------------------------------------------------------------------------------
--- Package declaration
--------------------------------------------------------------------------------
+
 package codec_2008p_pkg is
 
   -- This package extends the codec_pkg to support the types
@@ -75,9 +73,6 @@ end package;
 
 
 
--------------------------------------------------------------------------------
--- Package body
--------------------------------------------------------------------------------
 
 use work.codec_pkg.all;
 use work.codec_builder_pkg.all;

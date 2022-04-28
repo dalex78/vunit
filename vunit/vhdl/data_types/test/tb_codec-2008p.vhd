@@ -84,6 +84,7 @@ begin
     while test_suite loop
       if run("Test that boolean_vector can be encoded and decoded") then
         boolean_vector_5_downto_3 := (true, false, true);
+        check_relation(decode_boolean_vector(encode_boolean_vector((true, false, false))) = boolean_vector'(true, false, false));
         check_relation(decode_boolean_vector(encode_boolean_vector((true, false, true))) = boolean_vector'(true, false, true));
         check_relation(decode_boolean_vector(encode_boolean_vector((0         => true))) = boolean_vector'(0 => true));
         check_relation(decode_boolean_vector(encode_boolean_vector(null_boolean_vector)) = null_boolean_vector);
